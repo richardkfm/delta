@@ -1,5 +1,6 @@
 import { ASSUMPTIONS, LOCATION_LABELS, type Location } from '../config/assumptions'
 import { BENCHMARKS, GERMANY, type CountryData } from '../config/countries'
+import { SOURCES } from '../config/sources'
 import { formatBillions, formatEuro, formatNumber, formatPercent } from '../lib/format'
 
 const a = ASSUMPTIONS
@@ -163,6 +164,31 @@ export function Footer() {
               <li>Ist ein Vergleichsland in einer Kennzahl schlechter als Deutschland, rechnet das Modell keine Verschlechterung.</li>
             </ul>
           </div>
+
+          {SOURCES.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-ink">Quellen</h3>
+              <p className="mt-1">
+                Werte ohne Quelle sind Modellannahmen. Länderwerte sind teils unterschiedlich definiert (z. B.
+                Pünktlichkeitsschwelle) und daher nur grob vergleichbar.
+              </p>
+              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+                {SOURCES.map((src) => (
+                  <li key={src.id}>
+                    <a
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:text-accent hover:decoration-accent"
+                    >
+                      {src.title}
+                    </a>
+                    , {src.publisher} ({src.year}). <span className="text-muted">Verwendet für: {src.usedFor}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       </details>
 

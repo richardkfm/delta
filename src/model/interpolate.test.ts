@@ -62,7 +62,8 @@ describe('scenarioMetrics', () => {
 
   it('liefert bei Reglern = 1 exakt die Benchmark-Werte', () => {
     const m = scenarioMetrics(GERMANY, NL, all(1))
-    for (const k of METRIC_KEYS) expect(m[k]).toBe(NL[k])
+    // Gleitkomma: from + (to − from) × 1 ist nicht immer bitgleich to.
+    for (const k of METRIC_KEYS) expect(m[k]).toBeCloseTo(NL[k], 10)
   })
 
   it('liefert bei Reglern = 0,5 die Mittelwerte aller 8 Kennzahlen', () => {
@@ -73,9 +74,9 @@ describe('scenarioMetrics', () => {
 
   it('ordnet jeden Regler den richtigen Kennzahlen zu', () => {
     const m = scenarioMetrics(GERMANY, NL, { transit: 1, rail: 0, bike: 0, car: 0 })
-    expect(m.transitHeadwayMin).toBe(NL.transitHeadwayMin)
-    expect(m.transitLaneKmPer100k).toBe(NL.transitLaneKmPer100k)
-    expect(m.transitDoorToDoorKmh).toBe(NL.transitDoorToDoorKmh)
+    expect(m.transitHeadwayMin).toBeCloseTo(NL.transitHeadwayMin, 10)
+    expect(m.transitLaneKmPer100k).toBeCloseTo(NL.transitLaneKmPer100k, 10)
+    expect(m.transitDoorToDoorKmh).toBeCloseTo(NL.transitDoorToDoorKmh, 10)
     expect(m.railPunctuality).toBe(GERMANY.railPunctuality)
     expect(m.bikeShare).toBe(GERMANY.bikeShare)
     expect(m.bikeLaneKmPer1000).toBe(GERMANY.bikeLaneKmPer1000)
@@ -83,17 +84,17 @@ describe('scenarioMetrics', () => {
     expect(m.carShare).toBe(GERMANY.carShare)
 
     const r = scenarioMetrics(GERMANY, NL, { transit: 0, rail: 1, bike: 0, car: 0 })
-    expect(r.railPunctuality).toBe(NL.railPunctuality)
+    expect(r.railPunctuality).toBeCloseTo(NL.railPunctuality, 10)
     expect(r.transitHeadwayMin).toBe(GERMANY.transitHeadwayMin)
 
     const b = scenarioMetrics(GERMANY, NL, { transit: 0, rail: 0, bike: 1, car: 0 })
-    expect(b.bikeShare).toBe(NL.bikeShare)
-    expect(b.bikeLaneKmPer1000).toBe(NL.bikeLaneKmPer1000)
-    expect(b.bikeDoorToDoorKmh).toBe(NL.bikeDoorToDoorKmh)
+    expect(b.bikeShare).toBeCloseTo(NL.bikeShare, 10)
+    expect(b.bikeLaneKmPer1000).toBeCloseTo(NL.bikeLaneKmPer1000, 10)
+    expect(b.bikeDoorToDoorKmh).toBeCloseTo(NL.bikeDoorToDoorKmh, 10)
     expect(b.carShare).toBe(GERMANY.carShare)
 
     const c = scenarioMetrics(GERMANY, NL, { transit: 0, rail: 0, bike: 0, car: 1 })
-    expect(c.carShare).toBe(NL.carShare)
+    expect(c.carShare).toBeCloseTo(NL.carShare, 10)
     expect(c.bikeShare).toBe(GERMANY.bikeShare)
   })
 
@@ -102,7 +103,7 @@ describe('scenarioMetrics', () => {
     const hi = scenarioMetrics(GERMANY, NL, all(4))
     for (const k of METRIC_KEYS) {
       expect(lo[k]).toBe(GERMANY[k])
-      expect(hi[k]).toBe(NL[k])
+      expect(hi[k]).toBeCloseTo(NL[k], 10)
     }
   })
 })
@@ -115,18 +116,18 @@ describe('improvements', () => {
 
   it('liefert bei Reglern = 1 die Niederlande-Werte', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, NL, all(1)))
-    expect(imp.transit).toBeCloseTo(0.5, 10)
-    expect(imp.rail).toBeCloseTo(0.28, 10)
-    expect(imp.bike).toBeCloseTo(0.16, 10)
-    expect(imp.car).toBeCloseTo(1 - 0.47 / 0.57, 10)
-    expect(imp.car).toBeCloseTo(0.1754, 3)
+    expect(imp.transit).toBeCloseTo(1 - NL.transitHeadwayMin / GERMANY.transitHeadwayMin, 10)
+    expect(imp.rail).toBeCloseTo(NL.railPunctuality - GERMANY.railPunctuality, 10)
+    expect(imp.bike).toBeCloseTo(NL.bikeShare - GERMANY.bikeShare, 10)
+    expect(imp.car).toBeCloseTo(1 - NL.carShare / GERMANY.carShare, 10)
   })
 
   it('wächst linear mit dem Regler (Regler 0,5 → halbe Anteilspunkte)', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, NL, all(0.5)))
-    expect(imp.rail).toBeCloseTo(0.14, 10)
-    expect(imp.bike).toBeCloseTo(0.08, 10)
-    expect(imp.transit).toBeCloseTo(1 - 15 / 20, 10)
+    expect(imp.rail).toBeCloseTo((NL.railPunctuality - GERMANY.railPunctuality) / 2, 10)
+    expect(imp.bike).toBeCloseTo((NL.bikeShare - GERMANY.bikeShare) / 2, 10)
+    const halfHeadway = (GERMANY.transitHeadwayMin + NL.transitHeadwayMin) / 2
+    expect(imp.transit).toBeCloseTo(1 - halfHeadway / GERMANY.transitHeadwayMin, 10)
   })
 
   it('wird nie negativ, wenn ein Benchmark schlechter als Deutschland ist', () => {
@@ -158,7 +159,7 @@ describe('improvements', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, mixed, all(1)))
     expect(imp.bike).toBe(0)
     expect(imp.rail).toBe(0)
-    expect(imp.transit).toBeCloseTo(0.5, 10)
+    expect(imp.transit).toBeCloseTo(1 - NL.transitHeadwayMin / GERMANY.transitHeadwayMin, 10)
     expect(imp.car).toBeGreaterThan(0)
   })
 })

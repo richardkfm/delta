@@ -15,7 +15,7 @@ export interface Investment {
   railEur: number
   /** Investitionsbedarf gesamt in €. */
   totalEur: number
-  /** Zusätzliche ÖPNV-Betriebskosten (netto) in €/Jahr bei vollem Ausbau. */
+  /** Zusätzliche ÖPNV-Betriebskosten (netto nach Fahrgeld) in €/Jahr bei vollem Ausbau. */
   extraOperatingEurPerYear: number
 }
 
@@ -25,8 +25,9 @@ export interface Investment {
  * - Rad: Lücke bei Radweg-km je 1.000 Einw. × Einwohner × Kosten/km.
  * - ÖPNV: Lücke bei Trassen-km je 100.000 Einw. × Einwohner × Kosten/km.
  * - Bahn: Pünktlichkeitsgewinn in Prozentpunkten × km je Punkt × Kosten/km.
- * - Dazu laufende Mehrkosten für dichteren Takt (netto nach Mehreinnahmen):
- *   Betriebskosten × (Takt_DE / Takt_Szenario − 1) × Netto-Anteil.
+ * - Dazu laufende Mehrkosten für das bessere ÖPNV-Angebot (netto nach Fahrgeld):
+ *   Betriebskosten × relativer Tempogewinn Tür-zu-Tür × nicht gedeckter Anteil.
+ *   Annahme: Das Angebot (und damit der Aufwand) wächst so stark wie das Tempo.
  * Der Regler Autoabhängigkeit steht für Ordnungspolitik (Parkraum, Pricing)
  * und verursacht keine Infrastrukturkosten.
  */
@@ -39,9 +40,9 @@ export function investment(base: CountryData, m: ScenarioMetrics, imp: Improveme
   const transitEur = transitLaneKm * a.transitLaneCostPerKm
   const railEur = railUpgradeKm * a.railUpgradeCostPerKm
 
-  const headwayRatio = m.transitHeadwayMin > 0 ? base.transitHeadwayMin / m.transitHeadwayMin : 1
+  const speedGain = base.transitDoorToDoorKmh > 0 ? m.transitDoorToDoorKmh / base.transitDoorToDoorKmh - 1 : 0
   const extraOperatingEurPerYear =
-    Math.max(0, headwayRatio - 1) * a.transitOperatingCostPerYear * a.transitExtraOperatingNetShare
+    Math.max(0, speedGain) * a.transitOperatingCostPerYear * a.transitExtraOperatingNetShare
 
   return {
     bikeLaneKm,
@@ -61,7 +62,7 @@ export interface ExternalCostSaving {
 }
 
 /**
- * Jährliche Einsparung bei Folgekosten des Autoverkehrs:
+ * Jährliche Einsparung bei Folgekosten des Pkw-Verkehrs (gesellschaftliche Kosten):
  * Folgekosten × Elastizität × relativer Rückgang der Autofahrten.
  */
 export function externalCostSavings(imp: Improvements, a: Assumptions): ExternalCostSaving[] {

@@ -10,7 +10,10 @@ const CARS: CarCount[] = [0, 1, 2]
 const COMMUTES = [0, 17, 40]
 const all = (v: number): Sliders => ({ transit: v, rail: v, bike: v, car: v })
 
-/** Testland: besser als NL beim Takt/Netz/Auto, aber schlechter als Deutschland bei Rad, Bahn und Tempo. */
+/**
+ * Testland: besser als NL beim Takt/Netz/Auto und beim ÖPNV-Tempo (doppelt so schnell wie Deutschland),
+ * aber schlechter als Deutschland bei Radanteil, Rad-Tempo und Bahn.
+ */
 const DUMMY: CountryData = {
   id: 'test-dummy',
   name: 'Testland',
@@ -18,11 +21,11 @@ const DUMMY: CountryData = {
   flag: '🏳️',
   transitHeadwayMin: 5,
   transitLaneKmPer100k: 20,
-  transitDoorToDoorKmh: 12,
+  transitDoorToDoorKmh: GERMANY.transitDoorToDoorKmh * 2,
   railPunctuality: 0.5,
   bikeShare: 0.05,
   bikeLaneKmPer1000: 3.5,
-  bikeDoorToDoorKmh: 10,
+  bikeDoorToDoorKmh: 8,
   carShare: 0.3,
 }
 
@@ -77,10 +80,11 @@ describe('Plausibilitätscheck – alle Regler 1 (NL, 17 km)', () => {
       r: computeScenario(NL, all(1), { location, cars, commuteKm: 17 }),
     }))
 
-  it('Zeitersparnis liegt in jeder Wohnlage zwischen 2 und 3 Std./Woche', () => {
+  it('Zeitersparnis liegt in jeder Wohnlage gerundet auf eine Nachkommastelle (wie in der Anzeige) zwischen 2 und 3 Std./Woche', () => {
     for (const { r } of results(1)) {
-      expect(r.time.totalHoursPerWeek).toBeGreaterThan(2)
-      expect(r.time.totalHoursPerWeek).toBeLessThan(3)
+      const displayed = Math.round(r.time.totalHoursPerWeek * 10) / 10
+      expect(displayed).toBeGreaterThanOrEqual(2)
+      expect(displayed).toBeLessThanOrEqual(3)
     }
   })
 
@@ -95,7 +99,10 @@ describe('Plausibilitätscheck – alle Regler 1 (NL, 17 km)', () => {
   it('erwartete Ersparnis Großstadt mit 1 Auto liegt über 2000 €/Jahr', () => {
     const r = computeScenario(NL, all(1), { location: 'grossstadt', cars: 1, commuteKm: 17 })
     expect(r.money.totalPerYear).toBeGreaterThan(2000)
-    expect(r.money.totalPerYear).toBeCloseTo(4116, 6)
+    // Erwartung = Wahrscheinlichkeit × (Auto-Vollkosten − Ticket) × 12
+    const saving = (ASSUMPTIONS.carFullCostPerMonth - ASSUMPTIONS.transitTicketPerMonth) * 12
+    expect(r.money.savingsIfCarAbolished).toBe(saving)
+    expect(r.money.totalPerYear).toBeCloseTo(r.money.carAbolishProbability * saving, 6)
   })
 
   it('Investitionsbedarf liegt zwischen 50 und 400 Mrd. €', () => {
@@ -137,14 +144,15 @@ describe('computeScenario – Integration', () => {
   it('hängt Teilergebnisse konsistent zusammen', () => {
     const profile: Profile = { location: 'grossstadt', cars: 1, commuteKm: 17 }
     const r = computeScenario(NL, all(0.5), profile)
-    expect(r.metrics.railPunctuality).toBeCloseTo((0.62 + 0.9) / 2, 10)
-    expect(r.improvements.bike).toBeCloseTo(0.08, 10)
+    expect(r.metrics.railPunctuality).toBeCloseTo((GERMANY.railPunctuality + NL.railPunctuality) / 2, 10)
+    expect(r.improvements.bike).toBeCloseTo((NL.bikeShare - GERMANY.bikeShare) / 2, 10)
     expect(r.costBenefit.timeline).toHaveLength(ASSUMPTIONS.horizonYears)
     const last = r.costBenefit.timeline[r.costBenefit.timeline.length - 1]
-    // Bauzeit: Summe y/10 für y = 1…10 = 5,5; danach 20 Jahre voller Nutzen.
-    expect(ASSUMPTIONS.buildYears).toBe(10)
-    expect(ASSUMPTIONS.horizonYears).toBe(30)
-    expect(last.cumulativeBenefit).toBeCloseTo(r.externalSavingsPerYear * 25.5, -3)
+    // Nutzen wächst in der Bauzeit linear (Fortschritt y / buildYears), danach voll:
+    // Summe über alle Jahre y = 1…Horizont von min(1, y / buildYears).
+    let years = 0
+    for (let y = 1; y <= ASSUMPTIONS.horizonYears; y++) years += Math.min(1, y / ASSUMPTIONS.buildYears)
+    expect(last.cumulativeBenefit).toBeCloseTo(r.externalSavingsPerYear * years, -3)
   })
 
   it('verwendet die übergebenen Annahmen', () => {
@@ -156,7 +164,7 @@ describe('computeScenario – Integration', () => {
   it('verwendet das übergebene Basisland', () => {
     const base: CountryData = { ...GERMANY, id: 'zz', transitHeadwayMin: 40 }
     const r = computeScenario(NL, all(1), { location: 'kleinstadt', cars: 1, commuteKm: 17 }, ASSUMPTIONS, base)
-    expect(r.improvements.transit).toBeCloseTo(0.75, 10)
+    expect(r.improvements.transit).toBeCloseTo(1 - NL.transitHeadwayMin / 40, 10)
   })
 
   it('ist eine reine Funktion: gleiche Eingabe ergibt gleiche Ausgabe', () => {
@@ -212,10 +220,10 @@ describe('Erweiterbarkeit – Dummy-Land ohne Code-Änderung', () => {
 
   it('computeScenario funktioniert allein durch Übergabe des Objekts', () => {
     const r = computeScenario(DUMMY, all(1), { location: 'grossstadt', cars: 1, commuteKm: 17 })
-    expect(r.metrics.transitHeadwayMin).toBe(5)
-    expect(r.metrics.bikeShare).toBe(0.05)
-    expect(r.improvements.transit).toBeCloseTo(0.75, 10)
-    expect(r.improvements.car).toBeCloseTo(1 - 0.3 / 0.57, 10)
+    expect(r.metrics.transitHeadwayMin).toBe(DUMMY.transitHeadwayMin)
+    expect(r.metrics.bikeShare).toBe(DUMMY.bikeShare)
+    expect(r.improvements.transit).toBeCloseTo(1 - DUMMY.transitHeadwayMin / GERMANY.transitHeadwayMin, 10)
+    expect(r.improvements.car).toBeCloseTo(1 - DUMMY.carShare / GERMANY.carShare, 10)
   })
 
   it('rechnet schlechtere Dimensionen nicht als Verschlechterung', () => {
@@ -271,9 +279,25 @@ describe('Erweiterbarkeit – Dummy-Land ohne Code-Änderung', () => {
     }
   })
 
-  it('übernimmt das Dummy-Land auch in der Investitionsrechnung (Takt 5 → Betriebsmehrkosten)', () => {
+  it('übernimmt das Dummy-Land auch in der Investitionsrechnung (Tempo 2× → Betriebsmehrkosten, dichteres Netz → Trassen)', () => {
     const r = computeScenario(DUMMY, { transit: 1, rail: 0, bike: 0, car: 0 }, { location: 'kleinstadt', cars: 1, commuteKm: 17 })
-    expect(r.investment.transitLaneKm).toBeCloseTo((20 - 9) * 840, 6)
-    expect(r.investment.extraOperatingEurPerYear).toBeCloseTo((20 / 5 - 1) * 14e9 * 0.25, 0)
+    const A = ASSUMPTIONS
+    const km = (DUMMY.transitLaneKmPer100k - GERMANY.transitLaneKmPer100k) * (A.population / 100_000)
+    expect(km).toBeGreaterThan(0)
+    expect(r.investment.transitLaneKm).toBeCloseTo(km, 6)
+    expect(r.investment.transitEur).toBeCloseTo(km * A.transitLaneCostPerKm, 0)
+    // Tempo doppelt so hoch → relativer Tempogewinn 1.
+    expect(r.investment.extraOperatingEurPerYear).toBeCloseTo(
+      (DUMMY.transitDoorToDoorKmh / GERMANY.transitDoorToDoorKmh - 1) * A.transitOperatingCostPerYear * A.transitExtraOperatingNetShare,
+      0,
+    )
+    expect(r.investment.extraOperatingEurPerYear).toBeCloseTo(A.transitOperatingCostPerYear * A.transitExtraOperatingNetShare, 0)
+  })
+
+  it('Betriebsmehrkosten hängen am Tempo, nicht am Takt: Dummy-Land mit langsamerem ÖPNV hat trotz Takt 5 keine', () => {
+    const slow: CountryData = { ...DUMMY, transitDoorToDoorKmh: GERMANY.transitDoorToDoorKmh - 3 }
+    const r = computeScenario(slow, { transit: 1, rail: 0, bike: 0, car: 0 }, { location: 'kleinstadt', cars: 1, commuteKm: 17 })
+    expect(r.improvements.transit).toBeGreaterThan(0)
+    expect(r.investment.extraOperatingEurPerYear).toBe(0)
   })
 })

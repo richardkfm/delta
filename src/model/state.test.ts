@@ -29,24 +29,73 @@ describe('investment', () => {
     })
   })
 
-  it('liefert bei Reglern = 1 (NL) die Handrechnung', () => {
+  it('liefert bei Reglern = 1 (NL) die Handrechnung aus den Config-Werten', () => {
     const i = inv(all(1))
-    expect(i.bikeLaneKm).toBeCloseTo((2.0 - 0.9) * 84_000, 6)
-    expect(i.transitLaneKm).toBeCloseTo(5 * 840, 6)
-    expect(i.railUpgradeKm).toBeCloseTo(28 * 320, 6)
-    expect(i.bikeEur).toBeCloseTo(i.bikeLaneKm * 500_000, 0)
-    expect(i.transitEur).toBeCloseTo(i.transitLaneKm * 7_500_000, 0)
-    expect(i.railEur).toBeCloseTo(i.railUpgradeKm * 8_000_000, 0)
-    expect(i.totalEur).toBeCloseTo(i.bikeEur + i.transitEur + i.railEur, 0)
-    expect(i.bikeEur).toBeCloseTo(46.2e9, -3)
-    expect(i.transitEur).toBeCloseTo(31.5e9, -3)
-    expect(i.railEur).toBeCloseTo(71.68e9, -3)
-    expect(i.totalEur).toBeCloseTo(149.38e9, -3)
+    const bikeKm = (NL.bikeLaneKmPer1000 - GERMANY.bikeLaneKmPer1000) * A.population / 1_000
+    const railKm = (NL.railPunctuality - GERMANY.railPunctuality) * 100 * A.railUpgradeKmPerPoint
+    expect(bikeKm).toBeGreaterThan(0)
+    expect(railKm).toBeGreaterThan(0)
+    expect(i.bikeLaneKm).toBeCloseTo(bikeKm, 6)
+    expect(i.railUpgradeKm).toBeCloseTo(railKm, 6)
+    expect(i.bikeEur).toBeCloseTo(bikeKm * A.bikeLaneCostPerKm, 0)
+    expect(i.railEur).toBeCloseTo(railKm * A.railUpgradeCostPerKm, 0)
+    // Mit dem NL-Benchmark gibt es weniger Tram je Einwohner als in DE → kein Investitionsbedarf.
+    expect(i.transitLaneKm).toBe(0)
+    expect(i.transitEur).toBe(0)
+    expect(i.totalEur).toBeCloseTo(i.bikeEur + i.railEur, 0)
   })
 
-  it('Betriebsmehrkosten bei NL: (20/10 − 1) × 14 Mrd. × 0,25 = 3,5 Mrd. €/Jahr', () => {
-    expect(inv(all(1)).extraOperatingEurPerYear).toBeCloseTo((20 / 10 - 1) * 14e9 * 0.25, 0)
-    expect(inv(all(1)).extraOperatingEurPerYear).toBeCloseTo(3.5e9, -3)
+  it('Handrechnung ÖPNV-Trassen mit eigenem Benchmark: (Lücke je 100.000 Einw.) × Einwohner × Kosten/km', () => {
+    const rich: CountryData = { ...NL, transitLaneKmPer100k: GERMANY.transitLaneKmPer100k + 5 }
+    const i = inv(all(1), rich)
+    const km = 5 * (A.population / 100_000)
+    expect(i.transitLaneKm).toBeCloseTo(km, 6)
+    expect(i.transitEur).toBeCloseTo(km * A.transitLaneCostPerKm, 0)
+    expect(i.totalEur).toBeCloseTo(i.bikeEur + i.transitEur + i.railEur, 0)
+  })
+
+  it('Handrechnung mit eigenen Annahmen: 10 Mio. Einw., Lücke 1 km je 1.000 Einw., 1 Mio. €/km → 10.000 km, 10 Mrd. €', () => {
+    const a = { ...A, population: 10_000_000, bikeLaneCostPerKm: 1_000_000 }
+    const bench: CountryData = { ...NL, bikeLaneKmPer1000: GERMANY.bikeLaneKmPer1000 + 1 }
+    const i = inv({ transit: 0, rail: 0, bike: 1, car: 0 }, bench, a)
+    expect(i.bikeLaneKm).toBeCloseTo(10_000, 6)
+    expect(i.bikeEur).toBeCloseTo(10e9, 0)
+  })
+
+  it('Betriebsmehrkosten bei NL: (Tempo NL / Tempo DE − 1) × Betriebskosten × nicht gedeckter Anteil', () => {
+    const expected =
+      (NL.transitDoorToDoorKmh / GERMANY.transitDoorToDoorKmh - 1) *
+      A.transitOperatingCostPerYear *
+      A.transitExtraOperatingNetShare
+    expect(expected).toBeGreaterThan(0)
+    expect(inv(all(1)).extraOperatingEurPerYear).toBeCloseTo(expected, 0)
+  })
+
+  it('Betriebsmehrkosten Handrechnung: Tempo 15 → 30 km/h, 10 Mrd. €, Anteil 0,5 → 5 Mrd. €/Jahr', () => {
+    const base: CountryData = { ...GERMANY, transitDoorToDoorKmh: 15 }
+    const bench: CountryData = { ...NL, transitDoorToDoorKmh: 30 }
+    const a = { ...A, transitOperatingCostPerYear: 10e9, transitExtraOperatingNetShare: 0.5 }
+    const m = scenarioMetrics(base, bench, all(1))
+    expect(investment(base, m, improvements(base, m), a).extraOperatingEurPerYear).toBeCloseTo(5e9, 0)
+    const half = scenarioMetrics(base, bench, all(0.5))
+    expect(investment(base, half, improvements(base, half), a).extraOperatingEurPerYear).toBeCloseTo(2.5e9, 0)
+  })
+
+  it('Betriebsmehrkosten sind 0, wenn das Benchmark-Tempo niedriger ist als in Deutschland', () => {
+    const slow: CountryData = { ...NL, transitDoorToDoorKmh: GERMANY.transitDoorToDoorKmh - 5 }
+    expect(inv(all(1), slow).extraOperatingEurPerYear).toBe(0)
+  })
+
+  it('Betriebsmehrkosten hängen nicht vom Takt ab, nur vom Tür-zu-Tür-Tempo', () => {
+    const noHeadway = inv(all(1), { ...NL, transitHeadwayMin: 0 }).extraOperatingEurPerYear
+    expect(noHeadway).toBeCloseTo(inv(all(1)).extraOperatingEurPerYear, 0)
+  })
+
+  it('mit NL sind ÖPNV-Trassen-km und -Kosten 0 (Benchmark hat weniger Tram je Einwohner, Untergrenze 0)', () => {
+    expect(NL.transitLaneKmPer100k).toBeLessThan(GERMANY.transitLaneKmPer100k)
+    const i = inv({ transit: 1, rail: 0, bike: 0, car: 0 })
+    expect(i.transitLaneKm).toBe(0)
+    expect(i.transitEur).toBe(0)
   })
 
   it('Regler Autoabhängigkeit verursacht keine Infrastrukturkosten', () => {
@@ -64,7 +113,9 @@ describe('investment', () => {
     expect(rail.railEur).toBeGreaterThan(0)
     expect(rail.bikeEur).toBe(0)
     expect(rail.transitEur).toBe(0)
-    const transit = inv({ transit: 1, rail: 0, bike: 0, car: 0 })
+    // NL hat weniger Tram je Einwohner als DE; für Trassenkosten daher ein Benchmark mit dichterem Netz.
+    const rich: CountryData = { ...NL, transitLaneKmPer100k: GERMANY.transitLaneKmPer100k + 5 }
+    const transit = inv({ transit: 1, rail: 0, bike: 0, car: 0 }, rich)
     expect(transit.transitEur).toBeGreaterThan(0)
     expect(transit.extraOperatingEurPerYear).toBeGreaterThan(0)
     expect(transit.bikeEur).toBe(0)
@@ -82,7 +133,7 @@ describe('investment', () => {
   it('nutzt Kosten und Einwohnerzahl aus den Annahmen', () => {
     const a = { ...A, population: 42_000_000, bikeLaneCostPerKm: 1_000_000 }
     const i = inv(all(1), NL, a)
-    expect(i.bikeLaneKm).toBeCloseTo(1.1 * 42_000, 6)
+    expect(i.bikeLaneKm).toBeCloseTo((NL.bikeLaneKmPer1000 - GERMANY.bikeLaneKmPer1000) * 42_000, 6)
     expect(i.bikeEur).toBeCloseTo(i.bikeLaneKm * 1_000_000, 0)
   })
 
@@ -92,6 +143,7 @@ describe('investment', () => {
       id: 'bad',
       transitHeadwayMin: 40,
       transitLaneKmPer100k: 3,
+      transitDoorToDoorKmh: 10,
       railPunctuality: 0.4,
       bikeLaneKmPer1000: 0.2,
     }
@@ -99,8 +151,10 @@ describe('investment', () => {
     for (const v of Object.values(i)) expect(v).toBe(0)
   })
 
-  it('verhindert Division durch 0 bei Takt 0 im Szenario', () => {
-    const i = inv(all(1), { ...NL, transitHeadwayMin: 0 })
+  it('verhindert Division durch 0 bei Tempo 0 in Deutschland', () => {
+    const base: CountryData = { ...GERMANY, transitDoorToDoorKmh: 0 }
+    const m = scenarioMetrics(base, NL, all(1))
+    const i = investment(base, m, improvements(base, m), A)
     expect(Number.isFinite(i.extraOperatingEurPerYear)).toBe(true)
     expect(i.extraOperatingEurPerYear).toBe(0)
   })
@@ -121,8 +175,22 @@ describe('externalCostSavings', () => {
       expect(res[i].label).toBe(c.label)
       expect(res[i].eurPerYear).toBeCloseTo(c.annualEur * c.elasticity * 0.1, 0)
     })
-    // 0,8 + 3 + 4 Mrd. €
-    expect(res.reduce((s, r) => s + r.eurPerYear, 0)).toBeCloseTo(7.8e9, -3)
+    const total = A.externalCosts.reduce((s, c) => s + c.annualEur * c.elasticity, 0) * 0.1
+    expect(res.reduce((s, r) => s + r.eurPerYear, 0)).toBeCloseTo(total, -3)
+  })
+
+  it('Handrechnung mit eigenen Posten: 10 Mrd. × 0,5 × 0,1 + 4 Mrd. × 1 × 0,1 = 0,9 Mrd. €', () => {
+    const a = {
+      ...A,
+      externalCosts: [
+        { label: 'A', annualEur: 10e9, elasticity: 0.5 },
+        { label: 'B', annualEur: 4e9, elasticity: 1 },
+      ],
+    }
+    const res = externalCostSavings(imp(0.1), a)
+    expect(res.map((r) => r.label)).toEqual(['A', 'B'])
+    expect(res[0].eurPerYear).toBeCloseTo(0.5e9, 0)
+    expect(res[1].eurPerYear).toBeCloseTo(0.4e9, 0)
   })
 
   it('ist proportional zur Autoverbesserung', () => {

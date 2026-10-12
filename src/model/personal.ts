@@ -35,7 +35,7 @@ export function timeSavings(
   const loc = a.locationFactors[profile.location]
   const commuteKm = Math.max(0, profile.commuteKm)
 
-  // Heutige Pendelzeit pro Tag, linear mit der Distanz skaliert (60 Min. bei 17 km).
+  // Heutige Pendelzeit pro Tag, linear mit der Distanz skaliert (Ø-Pendelzeit beim Ø-Arbeitsweg).
   const commuteMinPerDay = a.commuteMinutesPerDay * (commuteKm / a.averageCommuteKm)
   const commuteMin = commuteMinPerDay * a.transitCommuteElasticity * imp.transit * loc.transit * a.workDaysPerWeek
 

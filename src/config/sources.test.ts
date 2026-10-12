@@ -9,7 +9,15 @@ const configFiles = import.meta.glob(['./countries.ts', './assumptions.ts'], {
 }) as Record<string, string>
 
 const referencedIds = Object.values(configFiles).flatMap((text) =>
-  [...text.matchAll(/\[Quelle: ([^\]]+)\]/g)].flatMap((m) => m[1].split(',').map((id) => id.trim())),
+  [...text.matchAll(/\[Quelle: ([a-z0-9-]+(?:, [a-z0-9-]+)*)\]/g)].flatMap((m) => m[1].split(',').map((id) => id.trim())),
+)
+
+// Quellen-IDs, die der Footer direkt verwendet (src: ['…']).
+const footer = Object.values(
+  import.meta.glob('../components/Footer.tsx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+)[0]
+const footerIds = [...footer.matchAll(/src: \[([^\]]+)\]/g)].flatMap((m) =>
+  [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1]),
 )
 
 describe('Quellen', () => {
@@ -31,6 +39,12 @@ describe('Quellen', () => {
     const known = new Set(SOURCES.map((s) => s.id))
     const missing = referencedIds.filter((id) => !known.has(id))
     expect(missing).toEqual([])
+  })
+
+  it('jeder Verweis im Footer zeigt auf eine existierende Quelle', () => {
+    const known = new Set(SOURCES.map((s) => s.id))
+    expect(footerIds.length).toBeGreaterThan(0)
+    expect(footerIds.filter((id) => !known.has(id))).toEqual([])
   })
 
   it('jede Quelle wird in der Config verwendet', () => {

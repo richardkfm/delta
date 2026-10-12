@@ -25,7 +25,7 @@ export const SLIDER_DEFINITIONS: SliderDefinition[] = [
   {
     key: 'transit',
     label: 'ÖPNV-Takt & Netzdichte',
-    hint: 'Wie oft fahren Bus und Bahn, wie dicht ist das Netz?',
+    hint: 'Wie oft fahren Bus und Bahn? Die Taktwerte sind Annahmen.',
     metricLabel: 'Ø Takt',
     metric: (m) => headway(m.transitHeadwayMin),
     countryMetric: (c) => headway(c.transitHeadwayMin),

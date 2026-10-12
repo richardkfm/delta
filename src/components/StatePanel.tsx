@@ -13,7 +13,9 @@ export function StatePanel({ result }: { result: ScenarioResult }) {
       <h2 id="staat-titel" className="text-lg font-semibold">
         Und der Staat?
       </h2>
-      <p className="text-sm text-muted">Was der Ausbau kostet – und was er an Folgekosten des Autoverkehrs spart.</p>
+      <p className="text-sm text-muted">
+        Was der Ausbau kostet – und welche Folgekosten des Autoverkehrs die Gesellschaft dadurch spart.
+      </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-line p-4">
@@ -25,19 +27,19 @@ export function StatePanel({ result }: { result: ScenarioResult }) {
               value={formatBillions(inv.bikeEur)}
             />
             <Item
-              label={`ÖPNV-Trassen (${formatNumber(inv.transitLaneKm, 0)} km)`}
+              label={`Straßenbahn (${formatNumber(inv.transitLaneKm, 0)} km)`}
               value={formatBillions(inv.transitEur)}
             />
             <Item
-              label={`Schiene (${formatNumber(inv.railUpgradeKm, 0)} km)`}
+              label={`Schienensanierung (${formatNumber(inv.railUpgradeKm, 0)} km)`}
               value={formatBillions(inv.railEur)}
             />
-            <Item label="+ Betrieb dichterer Takt" value={`${formatBillions(inv.extraOperatingEurPerYear)}/Jahr`} />
+            <Item label="+ Mehrbetrieb ÖPNV (netto)" value={`${formatBillions(inv.extraOperatingEurPerYear)}/Jahr`} />
           </ul>
         </div>
 
         <div className="rounded-xl border border-line p-4">
-          <p className="text-sm text-muted">Eingesparte Folgekosten</p>
+          <p className="text-sm text-muted">Vermiedene Folgekosten (gesellschaftlich)</p>
           <p className="text-3xl font-bold tabular-nums text-accent">
             {formatBillions(externalSavingsPerYear)}
             <span className="ml-1 text-base font-semibold">/Jahr</span>

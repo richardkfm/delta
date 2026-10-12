@@ -122,7 +122,7 @@ export default function App() {
 
       <section aria-label="Nebeneffekt CO₂" className="mt-10 rounded-xl bg-accent-soft p-4 text-sm">
         <span className="font-semibold text-accent">Nebeneffekt:</span> Im Schnitt{' '}
-        <span className="font-semibold tabular-nums">{formatNumber(result.co2KgPerPersonYear, 0)} kg CO₂</span> weniger
+        <span className="font-semibold tabular-nums">{formatNumber(result.co2KgPerPersonYear, 0)} kg CO₂e</span> weniger
         pro Person und Jahr – durch weniger Autofahrten.
       </section>
 

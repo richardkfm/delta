@@ -24,6 +24,7 @@ ausliefern.
 | --- | --- |
 | `src/config/countries.ts` | Kennzahlen je Land (Deutschland + Benchmarks), kommentiert als Schätzwerte |
 | `src/config/assumptions.ts` | Modellannahmen: Kosten, Wirkungsstärken, Wohnlage-Faktoren |
+| `src/config/sources.ts` | Quellenverzeichnis; die Config verweist mit `[Quelle: <id>]` darauf |
 | `src/config/sliders.ts` | Beschriftung der Regler und welche Kennzahl sie anzeigen |
 | `src/model/` | Reine Rechenfunktionen ohne UI, vollständig getestet |
 | `src/lib/` | Formatierung (de-DE) und URL-Zustand zum Teilen |
@@ -37,4 +38,5 @@ Annahmen-Tabelle übernehmen das Land automatisch.
 
 ## Annahmen
 
-Siehe [`ANNAHMEN.md`](./ANNAHMEN.md) sowie die aufklappbare Liste im Footer der App.
+Siehe [`ANNAHMEN.md`](./ANNAHMEN.md) sowie die aufklappbare Liste im Footer der App. Belegte Werte sind dort mit
+Fußnoten zur Quellenliste versehen, Modellannahmen sind als „Annahme“ gekennzeichnet.

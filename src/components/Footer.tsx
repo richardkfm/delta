@@ -5,85 +5,121 @@ import { formatBillions, formatEuro, formatNumber, formatPercent } from '../lib/
 
 const a = ASSUMPTIONS
 
+/** Ein Wert der Annahmenliste. Ohne `src` ist er eine Modellannahme ohne direkte Quelle. */
+interface Item {
+  label: string
+  value: string
+  /** IDs aus `sources.ts`. */
+  src?: string[]
+}
+
 /** Länderkennzahlen: Zeilen der Tabelle, Spalten = Deutschland + alle Benchmarks. */
-const COUNTRY_ROWS: { label: string; value: (c: CountryData) => string }[] = [
-  { label: 'Ø ÖPNV-Takt', value: (c) => `${formatNumber(c.transitHeadwayMin, 0)} Min.` },
-  { label: 'ÖPNV-Trasse je 100.000 Einw.', value: (c) => `${formatNumber(c.transitLaneKmPer100k, 1)} km` },
-  { label: 'ÖPNV Tür-zu-Tür', value: (c) => `${formatNumber(c.transitDoorToDoorKmh, 0)} km/h` },
-  { label: 'Bahn-Pünktlichkeit Fernverkehr', value: (c) => formatPercent(c.railPunctuality) },
-  { label: 'Radanteil an allen Wegen', value: (c) => formatPercent(c.bikeShare) },
+const COUNTRY_ROWS: { label: string; value: (c: CountryData) => string; assumption?: boolean }[] = [
+  { label: 'Ø ÖPNV-Takt', value: (c) => `${formatNumber(c.transitHeadwayMin, 0)} Min.`, assumption: true },
+  { label: 'Straßen-/Stadtbahn je 100.000 Einw.', value: (c) => `${formatNumber(c.transitLaneKmPer100k, 1)} km` },
+  { label: 'Bus/Tram Tür-zu-Tür', value: (c) => `${formatNumber(c.transitDoorToDoorKmh, 1)} km/h` },
+  { label: 'Bahn-Pünktlichkeit', value: (c) => formatPercent(c.railPunctuality, 1) },
+  { label: 'Radanteil an allen Wegen', value: (c) => formatPercent(c.bikeShare, 1) },
   { label: 'Radwege je 1.000 Einw.', value: (c) => `${formatNumber(c.bikeLaneKmPer1000, 1)} km` },
-  { label: 'Rad Tür-zu-Tür', value: (c) => `${formatNumber(c.bikeDoorToDoorKmh, 0)} km/h` },
-  { label: 'Autoanteil an allen Wegen', value: (c) => formatPercent(c.carShare) },
+  { label: 'Rad Tür-zu-Tür', value: (c) => `${formatNumber(c.bikeDoorToDoorKmh, 1)} km/h` },
+  { label: 'Autoanteil an allen Wegen', value: (c) => formatPercent(c.carShare, 1) },
 ]
 
 const loc = (l: Location) => a.locationFactors[l]
 const perLocation = (f: (l: Location) => string) =>
   (Object.keys(LOCATION_LABELS) as Location[]).map((l) => `${LOCATION_LABELS[l]} ${f(l)}`).join(' · ')
 
-/** Modellannahmen als lesbare Liste. */
-const ASSUMPTION_GROUPS: { title: string; items: [string, string][] }[] = [
+/** Modellannahmen als lesbare Liste, mit Quellenverweisen. */
+const ASSUMPTION_GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Haushalt',
     items: [
-      ['Auto-Vollkosten', `${formatEuro(a.carFullCostPerMonth)}/Monat`],
-      ['ÖPNV-Ticket', `${formatEuro(a.transitTicketPerMonth)}/Monat`],
-      ['Zweitwagen: Faktor auf Abschaffungs-Wahrscheinlichkeit', `× ${formatNumber(a.secondCarProbabilityFactor, 1)}`],
-      ['Max. Wahrscheinlichkeit Autoverzicht', perLocation((l) => formatPercent(loc(l).maxCarAbolishProbability))],
-      ['Ohne Auto: Taxi, Carsharing & Co.', `${formatEuro(a.noCarSubstituteCostPerYear)}/Jahr, bis −${formatPercent(a.noCarSubstituteReductionMax)}`],
-      ['Ohne Auto: Zeitwert', `${formatEuro(a.valueOfTimePerHour)}/Std.`],
+      { label: 'Auto-Vollkosten (Bestand, unter ADAC-Neuwagenwerten)', value: `${formatEuro(a.carFullCostPerMonth)}/Monat`, src: ['adac-autokosten', 'adac-kompaktklasse'] },
+      { label: 'ÖPNV-Ticket (Deutschlandticket)', value: `${formatEuro(a.transitTicketPerMonth)}/Monat`, src: ['correctiv-dticket'] },
+      { label: 'Zweitwagen: Faktor auf Abschaffungs-Wahrscheinlichkeit', value: `× ${formatNumber(a.secondCarProbabilityFactor, 1)}` },
+      { label: 'Max. Wahrscheinlichkeit Autoverzicht', value: perLocation((l) => formatPercent(loc(l).maxCarAbolishProbability)) },
+      { label: 'Ohne Auto: Taxi, Carsharing & Co.', value: `${formatEuro(a.noCarSubstituteCostPerYear)}/Jahr, bis −${formatPercent(a.noCarSubstituteReductionMax)}` },
+      { label: 'Ohne Auto: Zeitwert', value: `${formatEuro(a.valueOfTimePerHour)}/Std.` },
     ],
   },
   {
     title: 'Zeit',
     items: [
-      ['Ø Arbeitsweg', `${formatNumber(a.commuteMinutesPerDay, 0)} Min./Tag bei ${formatNumber(a.averageCommuteKm, 0)} km einfach`],
-      ...BENCHMARKS.map((b): [string, string] => [
-        `Pendelzeit-Effekt auf ${b.name}-Niveau`,
-        `−${formatPercent(a.transitCommuteElasticity * Math.max(0, 1 - b.transitHeadwayMin / GERMANY.transitHeadwayMin))}`,
-      ]),
-      ['Pufferzeit durch Unpünktlichkeit heute', `${formatNumber(a.bufferMinutesPerDay, 0)} Min./Tag`],
-      ['Alltagswege', `${formatNumber(a.everydayTripMinutesPerWeek, 0)} Min./Woche`],
-      ...BENCHMARKS.map((b): [string, string] => [
-        `Rad-Effekt auf Alltagswege, ${b.name}-Niveau`,
-        `−${formatPercent(a.bikeTimeElasticity * Math.max(0, b.bikeShare - GERMANY.bikeShare))}`,
-      ]),
-      ['Arbeitstage / Arbeitswochen', `${a.workDaysPerWeek} pro Woche / ${a.workWeeksPerYear} pro Jahr`],
-      ['Wohnlage-Faktor Takt', perLocation((l) => `× ${formatNumber(loc(l).transit, 1)}`)],
-      ['Wohnlage-Faktor Pünktlichkeit', perLocation((l) => `× ${formatNumber(loc(l).rail, 1)}`)],
-      ['Wohnlage-Faktor Rad', perLocation((l) => `× ${formatNumber(loc(l).bike, 1)}`)],
-      ['Mobilitätsradius: Tempo-Faktor ÖPNV', perLocation((l) => `× ${formatNumber(loc(l).transitSpeed, 2)}`)],
-      ['Mobilitätsradius: Tempo-Faktor Rad', perLocation((l) => `× ${formatNumber(loc(l).bikeSpeed, 2)}`)],
+      {
+        label: 'Ø Arbeitsweg',
+        value: `${formatNumber(a.commuteMinutesPerDay, 0)} Min./Tag bei ${formatNumber(a.averageCommuteKm, 0)} km einfach`,
+        src: ['destatis-pendelzeit-2024', 'destatis-pendler-2024'],
+      },
+      ...BENCHMARKS.map((b): Item => ({
+        label: `Pendelzeit-Effekt auf ${b.name}-Niveau`,
+        value: `−${formatPercent(a.transitCommuteElasticity * Math.max(0, 1 - b.transitHeadwayMin / GERMANY.transitHeadwayMin))}`,
+      })),
+      { label: 'Pufferzeit durch Unpünktlichkeit heute', value: `${formatNumber(a.bufferMinutesPerDay, 0)} Min./Tag` },
+      { label: 'Einkauf, Erledigungen, Freizeit', value: `${formatNumber(a.everydayTripMinutesPerWeek, 0)} Min./Woche`, src: ['mid2023-ergebnisbericht'] },
+      ...BENCHMARKS.map((b): Item => ({
+        label: `Rad-Effekt auf Alltagswege, ${b.name}-Niveau`,
+        value: `−${formatPercent(a.bikeTimeElasticity * Math.max(0, b.bikeShare - GERMANY.bikeShare))}`,
+      })),
+      { label: 'Arbeitstage / Arbeitswochen', value: `${a.workDaysPerWeek} pro Woche / ${a.workWeeksPerYear} pro Jahr` },
+      { label: 'Wohnlage-Faktor Takt', value: perLocation((l) => `× ${formatNumber(loc(l).transit, 1)}`) },
+      { label: 'Wohnlage-Faktor Pünktlichkeit', value: perLocation((l) => `× ${formatNumber(loc(l).rail, 1)}`) },
+      { label: 'Wohnlage-Faktor Rad', value: perLocation((l) => `× ${formatNumber(loc(l).bike, 1)}`) },
+      { label: 'Mobilitätsradius: Tempo-Faktor ÖPNV', value: perLocation((l) => `× ${formatNumber(loc(l).transitSpeed, 2)}`) },
+      { label: 'Mobilitätsradius: Tempo-Faktor Rad', value: perLocation((l) => `× ${formatNumber(loc(l).bikeSpeed, 2)}`) },
     ],
   },
   {
     title: 'Staat',
     items: [
-      ['Einwohner', `${formatNumber(a.population / 1e6, 0)} Mio.`],
-      ['Radweg', `${formatNumber(a.bikeLaneCostPerKm / 1e6, 1)} Mio. €/km`],
-      ['ÖPNV-Trasse (Straßenbahn, Mittelwert 5–10 Mio.)', `${formatNumber(a.transitLaneCostPerKm / 1e6, 1)} Mio. €/km`],
-      ['Schiene (Sanierung/Ausbau)', `${formatNumber(a.railUpgradeCostPerKm / 1e6, 1)} Mio. €/km`],
-      ['Schienen-km je Prozentpunkt Pünktlichkeit', `${formatNumber(a.railUpgradeKmPerPoint, 0)} km`],
-      ['ÖPNV-Betriebskosten heute', `${formatBillions(a.transitOperatingCostPerYear)}/Jahr`],
-      ['Netto-Anteil Mehrbetriebskosten', formatPercent(a.transitExtraOperatingNetShare)],
-      ['Bauzeit / Betrachtungszeitraum', `${a.buildYears} / ${a.horizonYears} Jahre`],
+      { label: 'Einwohner', value: `${formatNumber(a.population / 1e6, 1)} Mio.`, src: ['destatis-bev-2025'] },
+      { label: 'Radweg (außerorts, Orientierungswert)', value: `${formatNumber(a.bikeLaneCostPerKm / 1e6, 1)} Mio. €/km`, src: ['hessen-radweg-kosten'] },
+      { label: 'Straßenbahn (zweigleisig, Mittelwert 10–15 Mio.)', value: `${formatNumber(a.transitLaneCostPerKm / 1e6, 1)} Mio. €/km`, src: ['oepnv-db-kosten'] },
+      { label: 'Schiene (Generalsanierung)', value: `${formatNumber(a.railUpgradeCostPerKm / 1e6, 0)} Mio. €/km`, src: ['brh-generalsanierung'] },
+      { label: 'Schienen-km je Prozentpunkt Pünktlichkeit (4.000 km Korridore als Anker)', value: `${formatNumber(a.railUpgradeKmPerPoint, 0)} km` },
+      { label: 'ÖPNV-Betriebskosten heute', value: `${formatBillions(a.transitOperatingCostPerYear)}/Jahr`, src: ['vdv-deutschlandangebot'] },
+      { label: 'Nicht durch Fahrgeld gedeckter Anteil', value: formatPercent(a.transitExtraOperatingNetShare), src: ['vdv-deutschlandangebot'] },
+      { label: 'Bauzeit / Betrachtungszeitraum', value: `${a.buildYears} / ${a.horizonYears} Jahre` },
       ...a.externalCosts.map(
-        (c): [string, string] => [
-          `Folgekosten Autoverkehr: ${c.label}`,
-          `${formatBillions(c.annualEur)}/Jahr, ${formatPercent(c.elasticity)} variabel`,
-        ],
+        (c): Item => ({
+          label: `Folgekosten Pkw-Verkehr: ${c.label}`,
+          value: `${formatBillions(c.annualEur)}/Jahr, ${formatPercent(c.elasticity)} variabel`,
+          src: c.label === 'Straßenerhalt' ? ['boettger-2021', 'wegekosten-2021'] : ['infras-2019'],
+        }),
       ),
     ],
   },
   {
     title: 'CO₂',
     items: [
-      ['Pkw-km pro Person', `${formatNumber(a.carKmPerPersonYear, 0)} km/Jahr`],
-      ['CO₂ Auto / ÖPNV', `${formatNumber(a.carCo2KgPerKm * 1000, 0)} / ${formatNumber(a.transitCo2KgPerKm * 1000, 0)} g/km`],
-      ['Anteil vermiedener Auto-km im ÖPNV', formatPercent(a.transitReplacementShare)],
+      { label: 'Pkw-km pro Person', value: `${formatNumber(a.carKmPerPersonYear, 0)} km/Jahr`, src: ['kba-fahrleistung-2023'] },
+      { label: 'CO₂e Auto je Fahrzeug-km (inkl. Vorkette)', value: `${formatNumber(a.carCo2KgPerKm * 1000, 0)} g`, src: ['uba-emissionen-2024'] },
+      { label: 'Ø Besetzung Pkw', value: `${formatNumber(a.carOccupancy, 1)} Personen`, src: ['uba-emissionen-2024'] },
+      { label: 'CO₂e ÖPNV je Personen-km (gewichtet)', value: `${formatNumber(a.transitCo2KgPerKm * 1000, 0)} g`, src: ['uba-emissionen-2024'] },
+      { label: 'Anteil vermiedener Personen-km im ÖPNV', value: formatPercent(a.transitReplacementShare) },
     ],
   },
 ]
+
+/** Fußnotennummer einer Quelle (Position in der Quellenliste, ab 1). */
+const sourceNumber = (id: string) => SOURCES.findIndex((s) => s.id === id) + 1
+
+function SourceRefs({ ids }: { ids?: string[] }) {
+  if (!ids || ids.length === 0) {
+    return <span className="ml-1 rounded bg-line/60 px-1 text-[10px] uppercase tracking-wide text-muted">Annahme</span>
+  }
+  return (
+    <sup className="ml-0.5">
+      {ids.map((id, i) => (
+        <span key={id}>
+          {i > 0 && ','}
+          <a href={`#quelle-${id}`} className="text-accent hover:underline">
+            {sourceNumber(id)}
+          </a>
+        </span>
+      ))}
+    </sup>
+  )
+}
 
 export function Footer() {
   const countries = [GERMANY, ...BENCHMARKS]
@@ -91,13 +127,13 @@ export function Footer() {
     <footer className="mt-16 border-t border-line pt-6 text-sm text-muted">
       <p className="font-medium text-ink">Schätzmodell zur Veranschaulichung, keine Prognose.</p>
       <p className="mt-1">
-        Alle Zahlen sind gerundete Schätzwerte. Das Modell rechnet bewusst einfach und linear, um Größenordnungen
-        fühlbar zu machen.
+        Die Kennzahlen beruhen auf öffentlichen Quellen, die Wirkungen auf vereinfachten Modellannahmen. Das Modell
+        rechnet bewusst einfach und linear, um Größenordnungen fühlbar zu machen.
       </p>
 
       <details className="group mt-4">
         <summary className="cursor-pointer select-none font-medium text-accent">
-          Alle Annahmen und Werte anzeigen
+          Alle Annahmen, Werte und Quellen anzeigen
         </summary>
 
         <div className="mt-4 space-y-6">
@@ -118,7 +154,10 @@ export function Footer() {
                 <tbody>
                   {COUNTRY_ROWS.map((row) => (
                     <tr key={row.label} className="border-b border-line/60">
-                      <td className="py-1 pr-3">{row.label}</td>
+                      <td className="py-1 pr-3">
+                        {row.label}
+                        {row.assumption && <SourceRefs />}
+                      </td>
                       {countries.map((c) => (
                         <td key={c.id} className="py-1 pr-3 text-right tabular-nums whitespace-nowrap text-ink">
                           {row.value(c)}
@@ -129,16 +168,24 @@ export function Footer() {
                 </tbody>
               </table>
             </div>
+            <p className="mt-2 text-xs">
+              Quellen der Länderwerte: MiD 2023, ODiN 2023 (CBS), DB und NS, VDV, Fietsberaad – siehe Liste unten.
+              Für die gesamte Radweglänge in Deutschland gibt es keine amtliche Zahl, der Wert ist geschätzt. Die
+              Pünktlichkeit ist unterschiedlich definiert (DB: Züge &lt; 6 Min., NS: Reisende &lt; 5 Min.).
+            </p>
           </div>
 
           {ASSUMPTION_GROUPS.map((g) => (
             <div key={g.title}>
               <h3 className="font-semibold text-ink">{g.title}</h3>
               <dl className="mt-2 divide-y divide-line/60">
-                {g.items.map(([k, v]) => (
-                  <div key={k} className="flex flex-col gap-0.5 py-1 sm:flex-row sm:justify-between sm:gap-4">
-                    <dt>{k}</dt>
-                    <dd className="tabular-nums text-ink sm:text-right">{v}</dd>
+                {g.items.map((item) => (
+                  <div key={item.label} className="flex flex-col gap-0.5 py-1 sm:flex-row sm:justify-between sm:gap-4">
+                    <dt>
+                      {item.label}
+                      <SourceRefs ids={item.src} />
+                    </dt>
+                    <dd className="tabular-nums text-ink sm:text-right">{item.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -158,37 +205,36 @@ export function Footer() {
                 & Co. plus Zeitgewinn.
               </li>
               <li>
-                Staat: Investition = Ausbaubedarf × Kosten pro km. Nutzen = Folgekosten des Autoverkehrs × Rückgang der
-                Autofahrten.
+                Staat: Investition = Ausbaubedarf × Kosten pro km, dazu Mehrkosten im ÖPNV-Betrieb. Nutzen =
+                Folgekosten des Pkw-Verkehrs × Rückgang der Autofahrten. Die Folgekosten sind gesellschaftliche Kosten
+                (z. B. Unfälle, Klima), nicht nur Ausgaben im Staatshaushalt.
               </li>
               <li>Ist ein Vergleichsland in einer Kennzahl schlechter als Deutschland, rechnet das Modell keine Verschlechterung.</li>
             </ul>
           </div>
 
-          {SOURCES.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-ink">Quellen</h3>
-              <p className="mt-1">
-                Werte ohne Quelle sind Modellannahmen. Länderwerte sind teils unterschiedlich definiert (z. B.
-                Pünktlichkeitsschwelle) und daher nur grob vergleichbar.
-              </p>
-              <ol className="mt-2 list-decimal space-y-1.5 pl-5">
-                {SOURCES.map((src) => (
-                  <li key={src.id}>
-                    <a
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-ink underline decoration-line underline-offset-2 hover:text-accent hover:decoration-accent"
-                    >
-                      {src.title}
-                    </a>
-                    , {src.publisher} ({src.year}). <span className="text-muted">Verwendet für: {src.usedFor}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+          <div>
+            <h3 className="font-semibold text-ink">Quellen</h3>
+            <p className="mt-1">
+              Werte mit dem Hinweis „Annahme“ sind Modellannahmen ohne direkte Quelle. Länderwerte sind teils
+              unterschiedlich definiert und daher nur grob vergleichbar. Stand der Recherche: Oktober 2026.
+            </p>
+            <ol className="mt-2 list-decimal space-y-1.5 pl-5">
+              {SOURCES.map((src) => (
+                <li key={src.id} id={`quelle-${src.id}`} className="scroll-mt-4">
+                  <a
+                    href={src.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-words text-ink underline decoration-line underline-offset-2 hover:text-accent hover:decoration-accent"
+                  >
+                    {src.title}
+                  </a>
+                  , {src.publisher} ({src.year}). <span className="text-muted">Verwendet für: {src.usedFor}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </details>
 

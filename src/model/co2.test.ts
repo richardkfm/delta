@@ -10,11 +10,34 @@ describe('co2SavingsKgPerPersonYear', () => {
     expect(co2SavingsKgPerPersonYear(imp(0), ASSUMPTIONS)).toBe(0)
   })
 
-  it('stimmt bei Autoverbesserung 0,1 mit der Handrechnung überein', () => {
-    // vermiedene km = 7000 × 0,1 = 700
-    // netto je km = 0,15 − 0,6 × 0,04 = 0,126 kg
-    // 700 × 0,126 = 88,2 kg
-    expect(co2SavingsKgPerPersonYear(imp(0.1), ASSUMPTIONS)).toBeCloseTo(88.2, 8)
+  it('stimmt bei Autoverbesserung 0,1 mit der Formel aus den Annahmen überein', () => {
+    const A = ASSUMPTIONS
+    const avoidedKm = A.carKmPerPersonYear * 0.1
+    const expected =
+      avoidedKm * A.carCo2KgPerKm - avoidedKm * A.carOccupancy * A.transitReplacementShare * A.transitCo2KgPerKm
+    expect(co2SavingsKgPerPersonYear(imp(0.1), A)).toBeCloseTo(expected, 8)
+    expect(expected).toBeGreaterThan(0)
+  })
+
+  it('Handrechnung: 100 km × 0,2 kg − 100 km × 1,5 Pers. × 0,5 × 0,04 kg = 17 kg', () => {
+    const a = {
+      ...ASSUMPTIONS,
+      carKmPerPersonYear: 1000,
+      carCo2KgPerKm: 0.2,
+      carOccupancy: 1.5,
+      transitReplacementShare: 0.5,
+      transitCo2KgPerKm: 0.04,
+    }
+    // vermiedene Pkw-km = 1000 × 0,1 = 100
+    // Pkw-Emissionen: 100 × 0,2 = 20 kg
+    // ÖPNV-Emissionen: 100 × 1,5 × 0,5 × 0,04 = 3 kg
+    expect(co2SavingsKgPerPersonYear(imp(0.1), a)).toBeCloseTo(17, 8)
+  })
+
+  it('berücksichtigt die Pkw-Besetzung: höhere Besetzung → mehr verlagerte Personen-km → weniger Einsparung', () => {
+    const lo = { ...ASSUMPTIONS, carOccupancy: 1 }
+    const hi = { ...ASSUMPTIONS, carOccupancy: 2 }
+    expect(co2SavingsKgPerPersonYear(imp(0.1), hi)).toBeLessThan(co2SavingsKgPerPersonYear(imp(0.1), lo))
   })
 
   it('skaliert linear mit der Autoverbesserung', () => {

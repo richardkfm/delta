@@ -10,32 +10,44 @@ const LOCATIONS: Location[] = ['grossstadt', 'kleinstadt', 'land']
 const all = (v: number): Sliders => ({ transit: v, rail: v, bike: v, car: v })
 const profile = (location: Location): Profile => ({ location, commuteKm: 17, cars: 1 })
 
+// Handrechenbare Annahmen/Länder, unabhängig von der Config.
+const HAND_A = {
+  ...ASSUMPTIONS,
+  radiusMinutes: 30,
+  locationFactors: {
+    ...ASSUMPTIONS.locationFactors,
+    grossstadt: { ...ASSUMPTIONS.locationFactors.grossstadt, transitSpeed: 0.8, bikeSpeed: 1.1 },
+  },
+}
+const HAND_BASE: CountryData = { ...GERMANY, transitDoorToDoorKmh: 15, bikeDoorToDoorKmh: 10 }
+const HAND_BENCH: CountryData = { ...NL, transitDoorToDoorKmh: 30, bikeDoorToDoorKmh: 20 }
+
 function radius(location: Location, s: number, bench: CountryData = NL, base: CountryData = GERMANY) {
   return mobilityRadius(base, scenarioMetrics(base, bench, all(s)), profile(location), ASSUMPTIONS)
 }
 
 describe('mobilityRadius – heute', () => {
-  it.each(LOCATIONS)('Radius = Geschwindigkeit × Wohnlagefaktor × 0,5 h (%s)', (loc) => {
+  it.each(LOCATIONS)('Radius = Geschwindigkeit × Wohnlagefaktor × Radiuszeit in Stunden (%s)', (loc) => {
     const f = ASSUMPTIONS.locationFactors[loc]
+    const hours = ASSUMPTIONS.radiusMinutes / 60
     const r = radius(loc, 0).today
-    expect(ASSUMPTIONS.radiusMinutes).toBe(30)
-    expect(r.transitKm).toBeCloseTo(GERMANY.transitDoorToDoorKmh * f.transitSpeed * 0.5, 10)
-    expect(r.bikeKm).toBeCloseTo(GERMANY.bikeDoorToDoorKmh * f.bikeSpeed * 0.5, 10)
+    expect(r.transitKm).toBeCloseTo(GERMANY.transitDoorToDoorKmh * f.transitSpeed * hours, 10)
+    expect(r.bikeKm).toBeCloseTo(GERMANY.bikeDoorToDoorKmh * f.bikeSpeed * hours, 10)
     expect(r.bestKm).toBeCloseTo(Math.max(r.transitKm, r.bikeKm), 10)
   })
 
-  it('Handrechnung Großstadt: ÖPNV 7,5 km, Rad 6,175 km', () => {
-    const r = radius('grossstadt', 0).today
-    expect(r.transitKm).toBeCloseTo(7.5, 10)
-    expect(r.bikeKm).toBeCloseTo(6.175, 10)
-    expect(r.bestKm).toBeCloseTo(7.5, 10)
+  it('Handrechnung mit eigenen Annahmen: ÖPNV 15 km/h × 0,8 × 0,5 h = 6 km, Rad 10 km/h × 1,1 × 0,5 h = 5,5 km', () => {
+    const r = mobilityRadius(HAND_BASE, scenarioMetrics(HAND_BASE, HAND_BENCH, all(0)), profile('grossstadt'), HAND_A)
+    expect(r.today.transitKm).toBeCloseTo(6, 10)
+    expect(r.today.bikeKm).toBeCloseTo(5.5, 10)
+    expect(r.today.bestKm).toBeCloseTo(6, 10)
   })
 
-  it('Handrechnung Land: ÖPNV 4,5 km, Rad 6,825 km, bestes = Rad', () => {
-    const r = radius('land', 0).today
-    expect(r.transitKm).toBeCloseTo(4.5, 10)
-    expect(r.bikeKm).toBeCloseTo(6.825, 10)
-    expect(r.bestKm).toBeCloseTo(6.825, 10)
+  it('Handrechnung mit eigenen Annahmen: wenn Rad schneller ist (12 km/h × 1,1 × 0,5 h = 6,6 km), ist bestes = Rad', () => {
+    const base: CountryData = { ...HAND_BASE, bikeDoorToDoorKmh: 12 }
+    const r = mobilityRadius(base, scenarioMetrics(base, HAND_BENCH, all(0)), profile('grossstadt'), HAND_A)
+    expect(r.today.bikeKm).toBeCloseTo(6.6, 10)
+    expect(r.today.bestKm).toBeCloseTo(6.6, 10)
   })
 
   it('hängt nicht vom Szenario ab', () => {
@@ -45,7 +57,7 @@ describe('mobilityRadius – heute', () => {
   it('nutzt radiusMinutes aus den Annahmen', () => {
     const a = { ...ASSUMPTIONS, radiusMinutes: 60 }
     const r = mobilityRadius(GERMANY, scenarioMetrics(GERMANY, NL, all(0)), profile('grossstadt'), a)
-    expect(r.today.transitKm).toBeCloseTo(15, 10)
+    expect(r.today.transitKm).toBeCloseTo(GERMANY.transitDoorToDoorKmh * ASSUMPTIONS.locationFactors.grossstadt.transitSpeed, 10)
   })
 })
 
@@ -64,11 +76,19 @@ describe('mobilityRadius – Szenario', () => {
     expect(r.areaGainPct).toBeGreaterThan(0)
   })
 
-  it('Handrechnung Großstadt bei NL: 9 km ÖPNV, +44 % Fläche', () => {
+  it('Handrechnung mit eigenen Annahmen: ÖPNV 15 → 30 km/h, Radius 6 → 12 km, +300 % Fläche', () => {
+    const r = mobilityRadius(HAND_BASE, scenarioMetrics(HAND_BASE, HAND_BENCH, all(1)), profile('grossstadt'), HAND_A)
+    expect(r.scenario.transitKm).toBeCloseTo(12, 10)
+    expect(r.scenario.bikeKm).toBeCloseTo(20 * 1.1 * 0.5, 10)
+    expect(r.areaGainPct).toBeCloseTo(((12 / 6) ** 2 - 1) * 100, 8)
+  })
+
+  it('Szenario mit NL entspricht Benchmark-Geschwindigkeit × Wohnlagefaktor × Radiuszeit (Großstadt)', () => {
+    const f = ASSUMPTIONS.locationFactors.grossstadt
+    const hours = ASSUMPTIONS.radiusMinutes / 60
     const r = radius('grossstadt', 1)
-    expect(r.scenario.transitKm).toBeCloseTo(9, 10)
-    expect(r.scenario.bikeKm).toBeCloseTo(15 * 0.95 * 0.5, 10)
-    expect(r.areaGainPct).toBeCloseTo(((9 / 7.5) ** 2 - 1) * 100, 8)
+    expect(r.scenario.transitKm).toBeCloseTo(Math.max(GERMANY.transitDoorToDoorKmh, NL.transitDoorToDoorKmh) * f.transitSpeed * hours, 8)
+    expect(r.scenario.bikeKm).toBeCloseTo(Math.max(GERMANY.bikeDoorToDoorKmh, NL.bikeDoorToDoorKmh) * f.bikeSpeed * hours, 8)
   })
 
   it.each(LOCATIONS)('areaGainPct ist konsistent mit (r1/r0)² − 1 (%s)', (loc) => {

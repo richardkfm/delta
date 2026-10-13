@@ -3,21 +3,34 @@ import { DEFAULT_BENCHMARK_ID } from '../config/countries'
 import { DEFAULT_STATE, serializeState, type AppState } from '../lib/urlState'
 
 /**
- * State of the embeddable widget "Könntest du dein Auto abschaffen?".
+ * State of the embeddable widget (widget.html).
  *
- * One slider moves all four model sliders together from "Germany today" (0)
- * to the benchmark level (1); the only profile input is the residential
- * location. The household is assumed to own one car.
+ * Variants:
+ * - auto: "Könntest du dein Auto abschaffen?" – chance of giving up the car.
+ * - vergleich: Germany vs. the benchmark country on the key metrics.
+ * - bahn: "Wie pünktlich wäre dein Zug?" – rail punctuality only.
  *
- * iframe parameters: lage (grossstadt|kleinstadt|land), niveau (0–100).
+ * One slider runs from "Germany today" (0) to the benchmark level (1). In
+ * "auto" and "vergleich" it moves all four model sliders together, in "bahn"
+ * only the rail slider. The only profile input is the residential location;
+ * the household is assumed to own one car.
+ *
+ * iframe parameters: v (auto|vergleich|bahn), lage (grossstadt|kleinstadt|land),
+ * niveau (0–100).
  */
+export type WidgetVariant = 'auto' | 'vergleich' | 'bahn'
+
+export const WIDGET_VARIANTS: WidgetVariant[] = ['auto', 'vergleich', 'bahn']
+
 export interface WidgetState {
-  /** Benchmark level 0–1, applied to all four sliders. */
+  variant: WidgetVariant
+  /** Benchmark level 0–1 of the widget's slider. */
   level: number
   location: Location
 }
 
 export const DEFAULT_WIDGET_STATE: WidgetState = {
+  variant: 'auto',
   level: 1,
   location: DEFAULT_STATE.profile.location,
 }
@@ -29,6 +42,9 @@ export function parseWidgetState(search: string): WidgetState {
   const p = new URLSearchParams(search)
   const d = DEFAULT_WIDGET_STATE
 
+  const v = p.get('v') as WidgetVariant | null
+  const variant = v !== null && WIDGET_VARIANTS.includes(v) ? v : d.variant
+
   const lage = p.get('lage') as Location | null
   const location = lage !== null && LOCATIONS.includes(lage) ? lage : d.location
 
@@ -36,14 +52,15 @@ export function parseWidgetState(search: string): WidgetState {
   const n = raw === null || raw.trim() === '' ? NaN : Number(raw)
   const level = Number.isFinite(n) ? Math.round(Math.min(100, Math.max(0, n))) / 100 : d.level
 
-  return { level, location }
+  return { variant, level, location }
 }
 
 /** Full app state that reproduces the widget's numbers. */
 export function toAppState(w: WidgetState): AppState {
+  const others = w.variant === 'bahn' ? 0 : w.level
   return {
     benchmarkId: DEFAULT_BENCHMARK_ID,
-    sliders: { transit: w.level, rail: w.level, bike: w.level, car: w.level },
+    sliders: { transit: others, rail: w.level, bike: others, car: others },
     profile: { ...DEFAULT_STATE.profile, location: w.location, cars: 1 },
   }
 }
@@ -62,6 +79,6 @@ export function buildAppLink(appUrl: string, w: WidgetState, pageUrl: string): s
   }
   url.searchParams.set('utm_source', 'widget')
   url.searchParams.set('utm_medium', 'embed')
-  url.searchParams.set('utm_content', 'auto')
+  url.searchParams.set('utm_content', w.variant)
   return url.toString()
 }

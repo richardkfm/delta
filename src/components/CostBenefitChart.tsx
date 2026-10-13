@@ -14,7 +14,7 @@ import { formatBillions, formatNumber } from '../lib/format'
 
 const tick = { fontSize: 11, fill: 'var(--color-muted)' }
 
-/** Glatte Achsenticks (1, 2, 5 × 10ⁿ) von 0 bis über das Maximum, höchstens 6 Intervalle. Mindestmaximum 4 Mrd. €, damit jeder Schritt ≥ 1 Mrd. € ist (ganzzahlige Beschriftung). */
+/** Smooth axis ticks (1, 2, 5 × 10ⁿ) from 0 to beyond the maximum, at most 6 intervals. Minimum maximum of 4 billion €, so every step is ≥ 1 billion € (integer labels). */
 function niceTicks(max: number): number[] {
   const value = Math.max(max, 4e9)
   const magnitude = 10 ** Math.floor(Math.log10(value / 6))

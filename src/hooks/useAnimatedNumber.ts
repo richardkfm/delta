@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Zählt eine Zahl weich zum Zielwert hoch bzw. runter (ease-out).
- * Respektiert „prefers-reduced-motion“: dann wird sofort gesprungen.
+ * Smoothly counts a number up or down to the target value (ease-out).
+ * Respects "prefers-reduced-motion": in that case it jumps immediately.
  */
 export function useAnimatedNumber(target: number, durationMs = 500): number {
   const [value, setValue] = useState(target)

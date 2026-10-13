@@ -5,15 +5,15 @@ import { formatBillions, formatEuro, formatNumber, formatPercent } from '../lib/
 
 const a = ASSUMPTIONS
 
-/** Ein Wert der Annahmenliste. Ohne `src` ist er eine Modellannahme ohne direkte Quelle. */
+/** One entry of the assumptions list. Without `src` it is a model assumption with no direct source. */
 interface Item {
   label: string
   value: string
-  /** IDs aus `sources.ts`. */
+  /** IDs from `sources.ts`. */
   src?: string[]
 }
 
-/** Länderkennzahlen: Zeilen der Tabelle, Spalten = Deutschland + alle Benchmarks. */
+/** Country key figures: table rows, columns = Germany + all benchmarks. */
 const COUNTRY_ROWS: { label: string; value: (c: CountryData) => string; assumption?: boolean }[] = [
   { label: 'Ø ÖPNV-Takt', value: (c) => `${formatNumber(c.transitHeadwayMin, 0)} Min.`, assumption: true },
   { label: 'Straßen-/Stadtbahn je 100.000 Einw.', value: (c) => `${formatNumber(c.transitLaneKmPer100k, 1)} km` },
@@ -29,7 +29,7 @@ const loc = (l: Location) => a.locationFactors[l]
 const perLocation = (f: (l: Location) => string) =>
   (Object.keys(LOCATION_LABELS) as Location[]).map((l) => `${LOCATION_LABELS[l]} ${f(l)}`).join(' · ')
 
-/** Modellannahmen als lesbare Liste, mit Quellenverweisen. */
+/** Model assumptions as a readable list, with source references. */
 const ASSUMPTION_GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Haushalt',
@@ -100,7 +100,7 @@ const ASSUMPTION_GROUPS: { title: string; items: Item[] }[] = [
   },
 ]
 
-/** Fußnotennummer einer Quelle (Position in der Quellenliste, ab 1). */
+/** Footnote number of a source (position in the source list, starting at 1). */
 const sourceNumber = (id: string) => SOURCES.findIndex((s) => s.id === id) + 1
 
 function SourceRefs({ ids }: { ids?: string[] }) {

@@ -9,7 +9,7 @@ interface Props {
   profile: Profile
 }
 
-/** Die beiden Hauptzahlen: Zeit pro Woche und Geld pro Jahr, animiert. */
+/** The two headline numbers: time per week and money per year, animated. */
 export function HeadlineNumbers({ time, money, profile }: Props) {
   const hours = useAnimatedNumber(time.totalHoursPerWeek)
   const euros = useAnimatedNumber(money.totalPerYear)

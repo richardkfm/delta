@@ -14,7 +14,7 @@ const CAR_OPTIONS: { value: CarCount; label: string }[] = [
   { value: 2, label: '2+' },
 ]
 
-/** Kompaktes persönliches Profil: Wohnlage, Arbeitsweg, Autos im Haushalt. */
+/** Compact personal profile: residential location, commute, cars in the household. */
 export function ProfilePanel({ profile, onChange }: Props) {
   return (
     <section aria-label="Dein Profil" className="grid gap-4 rounded-xl border border-line p-4 sm:grid-cols-[1.4fr_1fr_auto]">

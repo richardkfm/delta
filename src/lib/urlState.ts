@@ -3,11 +3,11 @@ import { BENCHMARKS, DEFAULT_BENCHMARK_ID } from '../config/countries'
 import type { Profile, Sliders } from '../model/types'
 
 /**
- * Szenario-Zustand der App und seine Abbildung auf URL-Parameter, damit
- * Szenarien per Link teilbar sind.
+ * Scenario state of the app and its mapping to URL parameters, so that
+ * scenarios can be shared via link.
  *
- * Parameter: b (Benchmark-ID), oepnv, bahn, rad, auto (0–100),
- * lage (grossstadt|kleinstadt|land), km (Arbeitsweg), autos (0|1|2).
+ * Parameters: b (benchmark ID), oepnv, bahn, rad, auto (0–100),
+ * lage (grossstadt|kleinstadt|land), km (commute), autos (0|1|2).
  */
 export interface AppState {
   benchmarkId: string
@@ -39,7 +39,7 @@ function parseNumber(value: string | null, min: number, max: number): number | n
   return Math.min(max, Math.max(min, n))
 }
 
-/** Liest den Zustand aus einem Query-String; ungültige/fehlende Werte → Standard. */
+/** Reads the state from a query string; invalid/missing values → default. */
 export function parseState(search: string, benchmarkIds: string[] = BENCHMARKS.map((b) => b.id)): AppState {
   const p = new URLSearchParams(search)
   const d = DEFAULT_STATE
@@ -69,7 +69,7 @@ export function parseState(search: string, benchmarkIds: string[] = BENCHMARKS.m
   }
 }
 
-/** Schreibt den Zustand als Query-String (ohne führendes „?“). */
+/** Writes the state as a query string (without leading "?"). */
 export function serializeState(state: AppState): string {
   const p = new URLSearchParams()
   p.set('b', state.benchmarkId)

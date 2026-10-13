@@ -1,9 +1,9 @@
 /**
- * Modellannahmen für Deutschland als Zielland.
+ * Model assumptions for Germany as the target country.
  *
- * Belegte Werte verweisen mit [Quelle: <id>] auf `sources.ts`. Werte mit
- * [Annahme] sind Modellannahmen ohne direkte Quelle (z. B. Wirkungsstärken),
- * gewählt für plausible Größenordnungen. Länderspezifische Kennzahlen stehen
+ * Sourced values reference `sources.ts` with [Source: <id>]. Values marked
+ * [Assumption] are model assumptions without a direct source (e.g. effect sizes),
+ * chosen for plausible orders of magnitude. Country-specific key figures live
  * in `countries.ts`.
  */
 
@@ -16,174 +16,174 @@ export const LOCATION_LABELS: Record<Location, string> = {
   land: 'Land',
 }
 
-/** Wirkungsfaktoren je Wohnlage (1 = Durchschnitt). */
+/** Effect factors per residential location (1 = average). */
 export interface LocationFactors {
-  /** Wirkung des ÖPNV-Takts auf die Pendelzeit. Land profitiert am stärksten vom Takt. */
+  /** Effect of public transit headway on commute time. Rural areas benefit most from headway. */
   transit: number
-  /** Wirkung der Bahn-Pünktlichkeit auf die Pufferzeit. */
+  /** Effect of rail punctuality on buffer time. */
   rail: number
-  /** Wirkung der Radinfrastruktur auf Alltagswege. Kurze Wege in der Stadt profitieren am stärksten. */
+  /** Effect of cycling infrastructure on everyday trips. Short urban trips benefit most. */
   bike: number
-  /** Max. Wahrscheinlichkeit, ein Auto abzuschaffen, auf vollem Benchmark-Niveau (0–1). */
+  /** Max. probability of giving up a car at full benchmark level (0–1). */
   maxCarAbolishProbability: number
-  /** Faktor auf die ÖPNV-Tür-zu-Tür-Geschwindigkeit (Land: längere Zu-/Abgangswege). */
+  /** Factor on public transit door-to-door speed (rural: longer access/egress walks). */
   transitSpeed: number
-  /** Faktor auf die Rad-Tür-zu-Tür-Geschwindigkeit (Stadt: mehr Ampeln). */
+  /** Factor on bike door-to-door speed (urban: more traffic lights). */
   bikeSpeed: number
 }
 
 export interface ExternalCostItem {
   label: string
-  /** Jährliche Folgekosten des Pkw-Verkehrs in €. */
+  /** Annual external costs of car traffic in €. */
   annualEur: number
-  /** Anteil, der proportional zum Rückgang der Autofahrten sinkt (0–1). */
+  /** Share that falls in proportion to the decline in car trips (0–1). */
   elasticity: number
 }
 
 export const ASSUMPTIONS = {
-  // ---------------- Bevölkerung ----------------
-  /** Einwohner Deutschlands, Ende 2025: 83,5 Mio. [Quelle: destatis-bev-2025] */
+  // ---------------- Population ----------------
+  /** Population of Germany, end of 2025: 83.5 million. [Source: destatis-bev-2025] */
   population: 83_500_000,
 
-  // ---------------- Kosten für Haushalte ----------------
+  // ---------------- Household costs ----------------
   /**
-   * Auto-Vollkosten inkl. Wertverlust in €/Monat. Nach ADAC kosten Neuwagen der
-   * Kompaktklasse ca. 640–675 €/Monat (5 Jahre, 15.000 km/Jahr). Der Bestand ist
-   * älter und fährt weniger (Ø 12.300 km), daher konservativ 550 € [Annahme].
-   * [Quelle: adac-autokosten, adac-kompaktklasse]
+   * Full cost of car ownership incl. depreciation in €/month. According to ADAC, new
+   * compact-class cars cost approx. 640–675 €/month (5 years, 15,000 km/year). The existing
+   * fleet is older and drives less (avg. 12,300 km), hence a conservative 550 € [Assumption].
+   * [Source: adac-autokosten, adac-kompaktklasse]
    */
   carFullCostPerMonth: 550,
-  /** Deutschlandticket 2026: 63 €/Monat. [Quelle: correctiv-dticket] */
+  /** Deutschlandticket 2026: 63 €/month. [Source: correctiv-dticket] */
   transitTicketPerMonth: 63,
-  /** [Annahme] Faktor auf die Abschaffungs-Wahrscheinlichkeit beim Zweitwagen (Haushalte mit 2+ Autos). */
+  /** [Assumption] Factor on the give-up probability for a second car (households with 2+ cars). */
   secondCarProbabilityFactor: 1.4,
-  /** [Annahme] Obergrenze für jede Abschaffungs-Wahrscheinlichkeit. */
+  /** [Assumption] Upper bound for every give-up probability. */
   maxProbability: 0.95,
 
-  // ---------------- Haushalte ohne Auto ----------------
-  /** [Annahme] Ausgaben für Taxi, Carsharing, Mietwagen, Lieferungen in €/Jahr. */
+  // ---------------- Households without a car ----------------
+  /** [Assumption] Spending on taxis, car sharing, rental cars, deliveries in €/year. */
   noCarSubstituteCostPerYear: 600,
-  /** [Annahme] Max. Reduktion dieser Ausgaben bei vollem Benchmark-Angebot (0–1). */
+  /** [Assumption] Max. reduction of this spending at full benchmark service level (0–1). */
   noCarSubstituteReductionMax: 0.5,
-  /** [Annahme] Konservativer Zeitwert in €/Stunde, nur für Haushalte ohne Auto angesetzt. */
+  /** [Assumption] Conservative value of time in €/hour, applied only to households without a car. */
   valueOfTimePerHour: 8,
 
-  // ---------------- Zeit ----------------
+  // ---------------- Time ----------------
   /**
-   * Ø Arbeitsweg in Minuten pro Tag (hin + zurück). Aus den Destatis-Zeitklassen
-   * 2024 abgeleitet: ca. 26 Min. einfach. [Quelle: destatis-pendelzeit-2024]
+   * Avg. commute in minutes per day (there + back). Derived from the Destatis time
+   * classes 2024: approx. 26 min one way. [Source: destatis-pendelzeit-2024]
    */
   commuteMinutesPerDay: 52,
-  /** Ø Arbeitsweg in km (einfach), aus den Destatis-Entfernungsklassen 2024 abgeleitet: ca. 17 km. [Quelle: destatis-pendler-2024] */
+  /** Avg. commute in km (one way), derived from the Destatis distance classes 2024: approx. 17 km. [Source: destatis-pendler-2024] */
   averageCommuteKm: 17,
-  /** Arbeitstage pro Woche. */
+  /** Working days per week. */
   workDaysPerWeek: 5,
-  /** Arbeitswochen pro Jahr (für Jahreswerte). */
+  /** Working weeks per year (for annual values). */
   workWeeksPerYear: 46,
   /**
-   * [Annahme] Pendelzeit-Elastizität bzgl. Taktverbesserung: Pendelzeit sinkt um
-   * Elastizität × relative Taktverkürzung. NL (Takt halbiert, 50 %) → −18 %.
+   * [Assumption] Commute-time elasticity with respect to headway improvement: commute time falls by
+   * elasticity × relative headway reduction. NL (headway halved, 50%) → −18%.
    */
   transitCommuteElasticity: 0.36,
-  /** [Annahme] Tägliche Pufferzeit wegen Unpünktlichkeit beim heutigen DE-Niveau in Min./Tag (Projektvorgabe, keine Studie gefunden). */
+  /** [Assumption] Daily buffer time due to unpunctuality at today's DE level in min/day (project default, no study found). */
   bufferMinutesPerDay: 10,
   /**
-   * Zeit für Einkauf, Erledigungen und Freizeit in Min./Woche, abgeleitet aus
-   * MiD 2023 (Wege × Dauer je Zweck, Tab. 11). [Quelle: mid2023-ergebnisbericht]
+   * Time for shopping, errands and leisure in min/week, derived from
+   * MiD 2023 (trips × duration per purpose, table 11). [Source: mid2023-ergebnisbericht]
    */
   everydayTripMinutesPerWeek: 345,
   /**
-   * [Annahme] Zeitwirkung der Radinfrastruktur: Alltagswege werden um
-   * Elastizität × Zuwachs Radanteil kürzer. NL (+15,8 Pp.) → −12 %.
+   * [Assumption] Time effect of cycling infrastructure: everyday trips get shorter by
+   * elasticity × increase in bike share. NL (+15.8 pp) → −12%.
    */
   bikeTimeElasticity: 0.75,
 
-  // ---------------- Wohnlage ----------------
-  /** [Annahme] Alle Wohnlage-Faktoren sind Modellannahmen. */
+  // ---------------- Residential location ----------------
+  /** [Assumption] All location factors are model assumptions. */
   locationFactors: {
     grossstadt: { transit: 0.9, rail: 1.0, bike: 1.2, maxCarAbolishProbability: 0.7, transitSpeed: 1.0, bikeSpeed: 0.95 },
     kleinstadt: { transit: 1.0, rail: 1.0, bike: 1.0, maxCarAbolishProbability: 0.45, transitSpeed: 0.8, bikeSpeed: 1.0 },
     land: { transit: 1.3, rail: 0.9, bike: 0.6, maxCarAbolishProbability: 0.25, transitSpeed: 0.6, bikeSpeed: 1.05 },
   } satisfies Record<Location, LocationFactors>,
 
-  // ---------------- Autoverzicht ----------------
-  /** [Annahme] Gewicht der einzelnen Regler für die Abschaffungs-Wahrscheinlichkeit (Summe 1). */
+  // ---------------- Giving up the car ----------------
+  /** [Assumption] Weight of each slider for the give-up probability (sum 1). */
   carAbolishWeights: { transit: 0.35, rail: 0.15, bike: 0.25, car: 0.25 },
   /**
-   * [Annahme] Verbesserung je Dimension, bei der ihr voller Beitrag zum Autoverzicht
-   * erreicht ist (entspricht dem Abstand DE → NL).
-   * transit: relative Taktverkürzung, rail: Pünktlichkeitsgewinn,
-   * bike: Zuwachs Radanteil, car: relativer Rückgang Autoanteil.
+   * [Assumption] Improvement per dimension at which its full contribution to giving up
+   * the car is reached (corresponds to the DE → NL gap).
+   * transit: relative headway reduction, rail: punctuality gain,
+   * bike: increase in bike share, car: relative decline in car share.
    */
   carAbolishReferenceImprovement: { transit: 0.5, rail: 0.907 - 0.601, bike: 0.268 - 0.11, car: 1 - 0.447 / 0.53 },
 
-  // ---------------- Mobilitätsradius ----------------
-  /** Reisezeit für den Mobilitätsradius in Minuten. */
+  // ---------------- Mobility radius ----------------
+  /** Travel time for the mobility radius in minutes. */
   radiusMinutes: 30,
 
-  // ---------------- Staat: Investitionen ----------------
-  /** Radweg 2,5 m außerorts: Orientierungswert 0,5 Mio. €/km (innerorts/Radschnellweg teurer: 1–2 Mio.). [Quelle: hessen-radweg-kosten] */
+  // ---------------- State: investments ----------------
+  /** Bike path 2.5 m wide outside built-up areas: benchmark 0.5 million €/km (inside built-up areas/cycle highway more expensive: 1–2 million). [Source: hessen-radweg-kosten] */
   bikeLaneCostPerKm: 500_000,
-  /** Straßenbahn-Neubau zweigleisig: 10–15 Mio. €/km (Preisstand 2020), Mittelwert. [Quelle: oepnv-db-kosten] */
+  /** New double-track tram line: 10–15 million €/km (2020 prices), midpoint. [Source: oepnv-db-kosten] */
   transitLaneCostPerKm: 12_500_000,
   /**
-   * Generalsanierung Schiene in €/km. Riedbahn: 1,5 Mrd. € für 70 km ≈ 21 Mio. €/km,
-   * ursprüngliche DB-Schätzung für alle Korridore ≈ 6,8 Mio. €/km; Mittelwert 15 Mio. [Quelle: brh-generalsanierung]
+   * General renovation (Generalsanierung) of rail in €/km. Riedbahn: 1.5 billion € for 70 km ≈ 21 million €/km,
+   * original DB estimate for all corridors ≈ 6.8 million €/km; midpoint 15 million. [Source: brh-generalsanierung]
    */
   railUpgradeCostPerKm: 15_000_000,
   /**
-   * Zu sanierende Schienen-km je Prozentpunkt Pünktlichkeitsgewinn. [Annahme] auf Basis von
-   * 4.000 km Hochleistungskorridoren für den Abstand DE → NL (30,6 Pp.) ≈ 130 km. [Quelle: brh-generalsanierung]
+   * Rail km to renovate per percentage point of punctuality gain. [Assumption] based on
+   * 4,000 km of high-performance corridors for the DE → NL gap (30.6 pp) ≈ 130 km. [Source: brh-generalsanierung]
    */
   railUpgradeKmPerPoint: 130,
-  /** Aufwand des ÖPNV in Deutschland 2024: ca. 39 Mrd. €/Jahr. [Quelle: vdv-deutschlandangebot] */
+  /** Public transit expenditure in Germany 2024: approx. 39 billion €/year. [Source: vdv-deutschlandangebot] */
   transitOperatingCostPerYear: 39_000_000_000,
   /**
-   * Anteil der Mehrkosten, der nicht durch Fahrgeld gedeckt ist (Kostendeckung ca. 33 %).
-   * [Quelle: vdv-deutschlandangebot] Mehrkosten = Aufwand × Tempogewinn ÖPNV × Anteil [Annahme].
+   * Share of the additional costs not covered by fares (cost recovery approx. 33%).
+   * [Source: vdv-deutschlandangebot] Additional costs = expenditure × transit speed gain × share [Assumption].
    */
   transitExtraOperatingNetShare: 0.67,
-  /** [Annahme] Bauzeit in Jahren: Investitionen verteilen sich gleichmäßig, Nutzen wächst linear mit. */
+  /** [Assumption] Construction time in years: investments are spread evenly, benefits grow linearly. */
   buildYears: 10,
-  /** Betrachtungszeitraum in Jahren. */
+  /** Evaluation horizon in years. */
   horizonYears: 30,
 
-  // ---------------- Staat: Folgekosten des Pkw-Verkehrs ----------------
+  // ---------------- State: external costs of car traffic ----------------
   /**
-   * Externe Kosten des Pkw-Verkehrs 2017 (INFRAS für Allianz pro Schiene, Tab. 8)
-   * plus Straßenerhalt. Gesellschaftliche Kosten, nicht nur Staatshaushalt.
+   * External costs of car traffic 2017 (INFRAS for Allianz pro Schiene, table 8)
+   * plus road maintenance. Societal costs, not just the state budget.
    */
   externalCosts: [
-    // Erhaltung und Betrieb aller Straßen ≈ 19,1 Mrd. €/Jahr (2020). [Quelle: boettger-2021]
-    // [Annahme] 40 % variabel mit dem Pkw-Verkehr: Pkw tragen 48 % der Wegekosten der
-    // Bundesfernstraßen, den gewichtsabhängigen Verschleiß aber fast nur Lkw. [Quelle: wegekosten-2021]
+    // Maintenance and operation of all roads ≈ 19.1 billion €/year (2020). [Source: boettger-2021]
+    // [Assumption] 40% variable with car traffic: cars bear 48% of the infrastructure costs of
+    // federal trunk roads, but weight-dependent wear is caused almost only by trucks. [Source: wegekosten-2021]
     { label: 'Straßenerhalt', annualEur: 19_100_000_000, elasticity: 0.4 },
-    // Pkw-Unfallkosten 48,8 Mrd. € (INFRAS). Zum Vergleich BASt 2024: 40,2 Mrd. € für alle
-    // Straßenverkehrsunfälle (andere Bewertung). [Quelle: infras-2019, bast-unfallkosten]
+    // Car accident costs 48.8 billion € (INFRAS). For comparison BASt 2024: 40.2 billion € for all
+    // road traffic accidents (different valuation). [Source: infras-2019, bast-unfallkosten]
     { label: 'Unfälle', annualEur: 48_800_000_000, elasticity: 1.0 },
-    // Pkw: Luftschadstoffe 5,7 + Lärm 3,4 Mrd. €. Bewegungsmangel ist nicht enthalten. [Quelle: infras-2019]
+    // Cars: air pollutants 5.7 + noise 3.4 billion €. Physical inactivity is not included. [Source: infras-2019]
     { label: 'Gesundheit (Luft, Lärm)', annualEur: 9_070_000_000, elasticity: 1.0 },
-    // Pkw: Klimakosten 16,6 Mrd. €. [Quelle: infras-2019]
+    // Cars: climate costs 16.6 billion €. [Source: infras-2019]
     { label: 'Klima', annualEur: 16_580_000_000, elasticity: 1.0 },
-    // Pkw: Natur und Landschaft 8,9 Mrd. €. [Quelle: infras-2019]
+    // Cars: nature and landscape 8.9 billion €. [Source: infras-2019]
     { label: 'Natur & Landschaft', annualEur: 8_850_000_000, elasticity: 1.0 },
-    // Pkw: vor- und nachgelagerte Prozesse (Energie, Fahrzeugbau) 20,5 Mrd. €. [Quelle: infras-2019]
+    // Cars: upstream and downstream processes (energy, vehicle manufacturing) 20.5 billion €. [Source: infras-2019]
     { label: 'Energie & Fahrzeugherstellung', annualEur: 20_490_000_000, elasticity: 1.0 },
   ] satisfies ExternalCostItem[],
 
   // ---------------- CO₂ ----------------
-  /** Pkw-km pro Person und Jahr: 591 Mrd. Pkw-km (2023) / 83,5 Mio. Einw. ≈ 7.100 km. [Quelle: kba-fahrleistung-2023] */
+  /** Car km per person and year: 591 billion car km (2023) / 83.5 million inhabitants ≈ 7,100 km. [Source: kba-fahrleistung-2023] */
   carKmPerPersonYear: 7_100,
-  /** Ø Besetzung eines Pkw (Personen). [Quelle: uba-emissionen-2024] */
+  /** Avg. occupancy of a car (persons). [Source: uba-emissionen-2024] */
   carOccupancy: 1.4,
-  /** CO₂e je Pkw-km in kg: 164 g je Personen-km × 1,4 Personen ≈ 230 g (inkl. Vorkette). [Quelle: uba-emissionen-2024] */
+  /** CO₂e per car km in kg: 164 g per person-km × 1.4 persons ≈ 230 g (incl. upstream chain). [Source: uba-emissionen-2024] */
   carCo2KgPerKm: 0.23,
   /**
-   * CO₂e je Personen-km im ÖPNV in kg. Bus 90, Tram/U-Bahn 42, Regionalbahn 44 g;
-   * gewichtet ca. 58 g [Annahme Gewichtung]. [Quelle: uba-emissionen-2024]
+   * CO₂e per person-km in public transit in kg. Bus 90, tram/subway 42, regional rail 44 g;
+   * weighted approx. 58 g [Assumption: weighting]. [Source: uba-emissionen-2024]
    */
   transitCo2KgPerKm: 0.058,
-  /** [Annahme] Anteil der vermiedenen Personen-km, die auf den ÖPNV verlagert werden (Rest: Rad, Fuß, kürzere Wege). */
+  /** [Assumption] Share of avoided person-km that shift to public transit (rest: bike, walking, shorter trips). */
   transitReplacementShare: 0.6,
 }
 

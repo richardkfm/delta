@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// Relative Basis, damit der Build auf beliebigen statischen Hosts (auch in Unterordnern) läuft.
+// Relative base so the build runs on any static host (including subfolders).
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],

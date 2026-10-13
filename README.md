@@ -50,7 +50,7 @@ backend.
 | --- | --- |
 | `src/config/countries.ts` | Metrics per country (Germany + benchmarks), each with a source reference or marked as an assumption |
 | `src/config/assumptions.ts` | Model assumptions: costs, effect sizes, location factors |
-| `src/config/sources.ts` | Source registry; config values reference it via `[Quelle: <id>]` |
+| `src/config/sources.ts` | Source registry; config values reference it via `[Source: <id>]` |
 | `src/config/sliders.ts` | Slider labels and the metric each slider displays |
 | `src/model/` | Pure calculation functions without UI, fully tested |
 | `src/lib/` | Formatting (de-DE) and URL state for sharing |

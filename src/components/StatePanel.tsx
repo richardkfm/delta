@@ -2,10 +2,10 @@ import { lazy, Suspense } from 'react'
 import { formatBillions, formatNumber } from '../lib/format'
 import type { ScenarioResult } from '../model'
 
-// Recharts ist groß – das Diagramm wird nachgeladen, damit die Hauptzahlen sofort erscheinen.
+// Recharts is large – the chart is loaded lazily so the headline numbers appear immediately.
 const CostBenefitChart = lazy(() => import('./CostBenefitChart').then((m) => ({ default: m.CostBenefitChart })))
 
-/** Staatsperspektive: Investitionen, vermiedene Folgekosten, Kosten-Nutzen-Verlauf. */
+/** State perspective: investments, avoided external costs, cost-benefit curve. */
 export function StatePanel({ result }: { result: ScenarioResult }) {
   const { investment: inv, externalSavings, externalSavingsPerYear, costBenefit } = result
   return (

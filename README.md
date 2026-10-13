@@ -44,6 +44,39 @@ The build is fully static (relative paths) and can be deployed to any web host.
 Stack: Vite, React, TypeScript, Tailwind CSS, Recharts and Vitest. There is no
 backend.
 
+## Embedding the widget
+
+`widget.html` is a small standalone page for other websites. It asks car owners
+"Könntest du dein Auto abschaffen?" ("Could you give up your car?"). Visitors
+pick where they live and move one slider from "Germany today" to the
+Netherlands' level. The widget then shows the chance of giving up the car as a
+gauge, together with the expected savings per year. The button "Ganzes Szenario
+ansehen" opens the full app in a new tab, with the same scenario prefilled.
+
+<img src="docs/screenshots/widget.png" alt="delta widget: location toggle, one slider to the Dutch level, a gauge with a 36 % chance of giving up the car and 2,104 € expected savings per year" width="300">
+
+Embed it with a plain iframe:
+
+```html
+<iframe src="https://<your-host>/widget.html"
+        width="100%" height="540" style="border:0;max-width:420px"
+        title="delta – Könntest du dein Auto abschaffen?" loading="lazy"></iframe>
+```
+
+- Optional parameters: `lage=grossstadt|kleinstadt|land` (where the visitor
+  lives) and `niveau=0–100` (the starting slider position, default 100).
+- Height: 540 px fits phone widths (320 px). At 420 px width, about 500 px is
+  enough.
+- The link target is set at build time with `VITE_DELTA_APP_URL` (see
+  `.env.example`). If it is empty, the widget links to `index.html` in the same
+  folder. The link carries the scenario as URL parameters plus
+  `utm_source=widget&utm_medium=embed&utm_content=auto`.
+- The widget sets no cookies and does no tracking.
+- The host serving `widget.html` must allow framing: no `X-Frame-Options`
+  header, and no `Content-Security-Policy: frame-ancestors` that excludes the
+  embedding sites. If an embedding site sandboxes the iframe, it needs
+  `allow-scripts allow-popups` for the widget and the link to work.
+
 ## Project structure
 
 | Path | Contents |
@@ -55,6 +88,7 @@ backend.
 | `src/model/` | Pure calculation functions without UI, fully tested |
 | `src/lib/` | Formatting (de-DE) and URL state for sharing |
 | `src/components/` | UI components |
+| `src/widget/` | Embeddable widget (`widget.html`): state, deep link to the app, gauge |
 
 ## Adding a benchmark country
 

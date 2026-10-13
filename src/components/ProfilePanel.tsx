@@ -71,7 +71,7 @@ interface SegmentedProps<T extends string | number> {
   onChange: (value: T) => void
 }
 
-function Segmented<T extends string | number>({ name, options, value, onChange }: SegmentedProps<T>) {
+export function Segmented<T extends string | number>({ name, options, value, onChange }: SegmentedProps<T>) {
   return (
     <div className="inline-flex w-full rounded-lg border border-line p-0.5 sm:w-auto">
       {options.map((o) => {

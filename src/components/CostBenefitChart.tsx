@@ -14,10 +14,21 @@ import { formatBillions, formatNumber } from '../lib/format'
 
 const tick = { fontSize: 11, fill: 'var(--color-muted)' }
 
+/** Glatte Achsenticks (1, 2, 5 × 10ⁿ) von 0 bis über das Maximum, höchstens 6 Intervalle. Mindestmaximum 4 Mrd. €, damit jeder Schritt ≥ 1 Mrd. € ist (ganzzahlige Beschriftung). */
+function niceTicks(max: number): number[] {
+  const value = Math.max(max, 4e9)
+  const magnitude = 10 ** Math.floor(Math.log10(value / 6))
+  const step =
+    [1, 2, 5, 10, 20].map((f) => f * magnitude).find((s) => Math.ceil(value / s) <= 6) ?? 20 * magnitude
+  return Array.from({ length: Math.ceil(value / step) + 1 }, (_, i) => i * step)
+}
+
 export function CostBenefitChart({ data }: { data: CostBenefit }) {
   const { timeline, breakEvenYear } = data
   const hasEffect = timeline.some((p) => p.cumulativeCost > 0 || p.cumulativeBenefit > 0)
   const horizon = timeline.length > 0 ? timeline[timeline.length - 1].year : 30
+
+  const yTicks = niceTicks(Math.max(0, ...timeline.map((p) => Math.max(p.cumulativeCost, p.cumulativeBenefit))))
 
   const ticks: number[] = []
   for (let y = 5; y <= horizon; y += 5) ticks.push(y)
@@ -65,7 +76,8 @@ export function CostBenefitChart({ data }: { data: CostBenefit }) {
               }}
             />
             <YAxis
-              domain={[0, (max: number) => Math.max(max, 1e9)]}
+              domain={[0, yTicks[yTicks.length - 1]]}
+              ticks={yTicks}
               tickFormatter={(v: number) => formatNumber(v / 1e9, 0)}
               tick={tick}
               tickLine={false}

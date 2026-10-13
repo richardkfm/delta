@@ -22,7 +22,7 @@ export default function App() {
     [bench, state.sliders, state.profile],
   )
 
-  // Szenario in die URL schreiben, damit es per Link teilbar ist.
+  // Write the scenario to the URL so it can be shared via link.
   useEffect(() => {
     const query = serializeState(state)
     window.history.replaceState(null, '', `${window.location.pathname}?${query}`)
@@ -48,7 +48,7 @@ export default function App() {
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Abbruch durch Nutzer oder fehlende Berechtigung – nichts zu tun.
+      // Aborted by the user or missing permission – nothing to do.
     }
   }
 
@@ -96,7 +96,7 @@ export default function App() {
         <ProfilePanel profile={state.profile} onChange={(profile) => setState((s) => ({ ...s, profile }))} />
       </div>
 
-      {/* Mobil: Zahlen → Regler → Radius. Desktop: Regler links, Ergebnisse rechts. */}
+      {/* Mobile: numbers → sliders → radius. Desktop: sliders on the left, results on the right. */}
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-x-14">
         <div className="lg:col-start-2 lg:row-start-1">
           <HeadlineNumbers time={result.time} money={result.money} profile={state.profile} />
@@ -133,7 +133,7 @@ export default function App() {
   )
 }
 
-/** Kompakte Leiste unten auf dem Handy, damit die Hauptzahlen beim Regeln sichtbar bleiben. */
+/** Compact bar at the bottom on phones so the headline numbers stay visible while adjusting. */
 function StickyBar({ hours, euros }: { hours: number; euros: number }) {
   const h = useAnimatedNumber(hours)
   const e = useAnimatedNumber(euros)

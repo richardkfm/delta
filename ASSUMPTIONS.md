@@ -6,8 +6,8 @@ were filled.
 
 - The values are defined, with comments, in `src/config/countries.ts`
   (country metrics) and `src/config/assumptions.ts` (model assumptions).
-- Sourced values reference `src/config/sources.ts` via `[Quelle: <id>]`.
-  Unsourced values are marked `[Annahme]`.
+- Sourced values reference `src/config/sources.ts` via `[Source: <id>]`.
+  Unsourced values are marked `[Assumption]`.
 - The app lists every value in the footer, with footnotes and the linked source
   list.
 - A test (`src/config/sources.test.ts`) ensures every reference points to an
@@ -154,7 +154,7 @@ Comparability notes:
   regional rail).
 
 ## UI
-- The app UI is in German; the docs are in English.
+- The app UI is in German; the docs and code comments are in English.
 - Default state without URL parameters: all sliders at 100 % (full Dutch level),
   big city, 17 km, 1 car.
 - URL parameters: `b`, `oepnv`, `bahn`, `rad`, `auto` (0–100), `lage`, `km`,

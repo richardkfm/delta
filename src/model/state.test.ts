@@ -15,7 +15,7 @@ function inv(s: Sliders, bench: CountryData = NL, a = A) {
 }
 
 describe('investment', () => {
-  it('ist bei Reglern = 0 überall null', () => {
+  it('is zero everywhere at sliders = 0', () => {
     const i = inv(all(0))
     expect(i).toEqual({
       bikeLaneKm: 0,
@@ -29,7 +29,7 @@ describe('investment', () => {
     })
   })
 
-  it('liefert bei Reglern = 1 (NL) die Handrechnung aus den Config-Werten', () => {
+  it('returns the hand calculation from the config values at sliders = 1 (NL)', () => {
     const i = inv(all(1))
     const bikeKm = (NL.bikeLaneKmPer1000 - GERMANY.bikeLaneKmPer1000) * A.population / 1_000
     const railKm = (NL.railPunctuality - GERMANY.railPunctuality) * 100 * A.railUpgradeKmPerPoint
@@ -39,13 +39,13 @@ describe('investment', () => {
     expect(i.railUpgradeKm).toBeCloseTo(railKm, 6)
     expect(i.bikeEur).toBeCloseTo(bikeKm * A.bikeLaneCostPerKm, 0)
     expect(i.railEur).toBeCloseTo(railKm * A.railUpgradeCostPerKm, 0)
-    // Mit dem NL-Benchmark gibt es weniger Tram je Einwohner als in DE → kein Investitionsbedarf.
+    // With the NL benchmark there is less tram per resident than in DE → no investment need.
     expect(i.transitLaneKm).toBe(0)
     expect(i.transitEur).toBe(0)
     expect(i.totalEur).toBeCloseTo(i.bikeEur + i.railEur, 0)
   })
 
-  it('Handrechnung ÖPNV-Trassen mit eigenem Benchmark: (Lücke je 100.000 Einw.) × Einwohner × Kosten/km', () => {
+  it('hand calculation of transit lines with custom benchmark: (gap per 100,000 residents) × residents × cost/km', () => {
     const rich: CountryData = { ...NL, transitLaneKmPer100k: GERMANY.transitLaneKmPer100k + 5 }
     const i = inv(all(1), rich)
     const km = 5 * (A.population / 100_000)
@@ -54,7 +54,7 @@ describe('investment', () => {
     expect(i.totalEur).toBeCloseTo(i.bikeEur + i.transitEur + i.railEur, 0)
   })
 
-  it('Handrechnung mit eigenen Annahmen: 10 Mio. Einw., Lücke 1 km je 1.000 Einw., 1 Mio. €/km → 10.000 km, 10 Mrd. €', () => {
+  it('hand calculation with custom assumptions: 10 million residents, gap 1 km per 1,000 residents, 1 million €/km → 10,000 km, 10 billion €', () => {
     const a = { ...A, population: 10_000_000, bikeLaneCostPerKm: 1_000_000 }
     const bench: CountryData = { ...NL, bikeLaneKmPer1000: GERMANY.bikeLaneKmPer1000 + 1 }
     const i = inv({ transit: 0, rail: 0, bike: 1, car: 0 }, bench, a)
@@ -62,7 +62,7 @@ describe('investment', () => {
     expect(i.bikeEur).toBeCloseTo(10e9, 0)
   })
 
-  it('Betriebsmehrkosten bei NL: (Tempo NL / Tempo DE − 1) × Betriebskosten × nicht gedeckter Anteil', () => {
+  it('extra operating costs for NL: (speed NL / speed DE − 1) × operating costs × uncovered share', () => {
     const expected =
       (NL.transitDoorToDoorKmh / GERMANY.transitDoorToDoorKmh - 1) *
       A.transitOperatingCostPerYear *
@@ -71,7 +71,7 @@ describe('investment', () => {
     expect(inv(all(1)).extraOperatingEurPerYear).toBeCloseTo(expected, 0)
   })
 
-  it('Betriebsmehrkosten Handrechnung: Tempo 15 → 30 km/h, 10 Mrd. €, Anteil 0,5 → 5 Mrd. €/Jahr', () => {
+  it('extra operating costs hand calculation: speed 15 → 30 km/h, 10 billion €, share 0.5 → 5 billion €/year', () => {
     const base: CountryData = { ...GERMANY, transitDoorToDoorKmh: 15 }
     const bench: CountryData = { ...NL, transitDoorToDoorKmh: 30 }
     const a = { ...A, transitOperatingCostPerYear: 10e9, transitExtraOperatingNetShare: 0.5 }
@@ -81,30 +81,30 @@ describe('investment', () => {
     expect(investment(base, half, improvements(base, half), a).extraOperatingEurPerYear).toBeCloseTo(2.5e9, 0)
   })
 
-  it('Betriebsmehrkosten sind 0, wenn das Benchmark-Tempo niedriger ist als in Deutschland', () => {
+  it('extra operating costs are 0 when the benchmark speed is lower than in Germany', () => {
     const slow: CountryData = { ...NL, transitDoorToDoorKmh: GERMANY.transitDoorToDoorKmh - 5 }
     expect(inv(all(1), slow).extraOperatingEurPerYear).toBe(0)
   })
 
-  it('Betriebsmehrkosten hängen nicht vom Takt ab, nur vom Tür-zu-Tür-Tempo', () => {
+  it('extra operating costs do not depend on frequency, only on door-to-door speed', () => {
     const noHeadway = inv(all(1), { ...NL, transitHeadwayMin: 0 }).extraOperatingEurPerYear
     expect(noHeadway).toBeCloseTo(inv(all(1)).extraOperatingEurPerYear, 0)
   })
 
-  it('mit NL sind ÖPNV-Trassen-km und -Kosten 0 (Benchmark hat weniger Tram je Einwohner, Untergrenze 0)', () => {
+  it('with NL, transit line km and costs are 0 (benchmark has less tram per resident, lower bound 0)', () => {
     expect(NL.transitLaneKmPer100k).toBeLessThan(GERMANY.transitLaneKmPer100k)
     const i = inv({ transit: 1, rail: 0, bike: 0, car: 0 })
     expect(i.transitLaneKm).toBe(0)
     expect(i.transitEur).toBe(0)
   })
 
-  it('Regler Autoabhängigkeit verursacht keine Infrastrukturkosten', () => {
+  it('car dependence slider incurs no infrastructure costs', () => {
     const i = inv({ transit: 0, rail: 0, bike: 0, car: 1 })
     expect(i.totalEur).toBe(0)
     expect(i.extraOperatingEurPerYear).toBe(0)
   })
 
-  it('ordnet jeden Regler dem richtigen Posten zu', () => {
+  it('maps each slider to the correct item', () => {
     const bike = inv({ transit: 0, rail: 0, bike: 1, car: 0 })
     expect(bike.bikeEur).toBeGreaterThan(0)
     expect(bike.transitEur).toBe(0)
@@ -113,7 +113,7 @@ describe('investment', () => {
     expect(rail.railEur).toBeGreaterThan(0)
     expect(rail.bikeEur).toBe(0)
     expect(rail.transitEur).toBe(0)
-    // NL hat weniger Tram je Einwohner als DE; für Trassenkosten daher ein Benchmark mit dichterem Netz.
+    // NL has less tram per resident than DE; so use a benchmark with a denser network for line costs.
     const rich: CountryData = { ...NL, transitLaneKmPer100k: GERMANY.transitLaneKmPer100k + 5 }
     const transit = inv({ transit: 1, rail: 0, bike: 0, car: 0 }, rich)
     expect(transit.transitEur).toBeGreaterThan(0)
@@ -122,7 +122,7 @@ describe('investment', () => {
     expect(transit.railEur).toBe(0)
   })
 
-  it('skaliert die Ausbau-km linear mit dem Regler', () => {
+  it('scales the build-out km linearly with the slider', () => {
     const half = inv(all(0.5))
     const full = inv(all(1))
     expect(half.bikeLaneKm).toBeCloseTo(full.bikeLaneKm / 2, 6)
@@ -130,14 +130,14 @@ describe('investment', () => {
     expect(half.railUpgradeKm).toBeCloseTo(full.railUpgradeKm / 2, 6)
   })
 
-  it('nutzt Kosten und Einwohnerzahl aus den Annahmen', () => {
+  it('uses costs and population from the assumptions', () => {
     const a = { ...A, population: 42_000_000, bikeLaneCostPerKm: 1_000_000 }
     const i = inv(all(1), NL, a)
     expect(i.bikeLaneKm).toBeCloseTo((NL.bikeLaneKmPer1000 - GERMANY.bikeLaneKmPer1000) * 42_000, 6)
     expect(i.bikeEur).toBeCloseTo(i.bikeLaneKm * 1_000_000, 0)
   })
 
-  it('verursacht keine negativen Werte bei einem in allen Dimensionen schlechteren Benchmark', () => {
+  it('produces no negative values for a benchmark that is worse in all dimensions', () => {
     const worse: CountryData = {
       ...NL,
       id: 'bad',
@@ -151,7 +151,7 @@ describe('investment', () => {
     for (const v of Object.values(i)) expect(v).toBe(0)
   })
 
-  it('verhindert Division durch 0 bei Tempo 0 in Deutschland', () => {
+  it('prevents division by 0 at speed 0 in Germany', () => {
     const base: CountryData = { ...GERMANY, transitDoorToDoorKmh: 0 }
     const m = scenarioMetrics(base, NL, all(1))
     const i = investment(base, m, improvements(base, m), A)
@@ -163,13 +163,13 @@ describe('investment', () => {
 describe('externalCostSavings', () => {
   const imp = (car: number): Improvements => ({ transit: 0, rail: 0, bike: 0, car })
 
-  it('ist bei Autoverbesserung 0 überall null', () => {
+  it('is zero everywhere at car improvement 0', () => {
     const res = externalCostSavings(imp(0), A)
     expect(res).toHaveLength(A.externalCosts.length)
     for (const r of res) expect(r.eurPerYear).toBe(0)
   })
 
-  it('liefert je Posten Folgekosten × Elastizität × Rückgang, mit Label', () => {
+  it('returns external costs × elasticity × decline per item, with label', () => {
     const res = externalCostSavings(imp(0.1), A)
     A.externalCosts.forEach((c, i) => {
       expect(res[i].label).toBe(c.label)
@@ -179,7 +179,7 @@ describe('externalCostSavings', () => {
     expect(res.reduce((s, r) => s + r.eurPerYear, 0)).toBeCloseTo(total, -3)
   })
 
-  it('Handrechnung mit eigenen Posten: 10 Mrd. × 0,5 × 0,1 + 4 Mrd. × 1 × 0,1 = 0,9 Mrd. €', () => {
+  it('hand calculation with custom items: 10 billion × 0.5 × 0.1 + 4 billion × 1 × 0.1 = 0.9 billion €', () => {
     const a = {
       ...A,
       externalCosts: [
@@ -193,27 +193,27 @@ describe('externalCostSavings', () => {
     expect(res[1].eurPerYear).toBeCloseTo(0.4e9, 0)
   })
 
-  it('ist proportional zur Autoverbesserung', () => {
+  it('is proportional to the car improvement', () => {
     const a = externalCostSavings(imp(0.05), A)
     const b = externalCostSavings(imp(0.15), A)
     a.forEach((r, i) => expect(b[i].eurPerYear).toBeCloseTo(3 * r.eurPerYear, 0))
   })
 
-  it('ist proportional zur Elastizität', () => {
+  it('is proportional to the elasticity', () => {
     const base = externalCostSavings(imp(0.1), A)
     const a = { ...A, externalCosts: A.externalCosts.map((c) => ({ ...c, elasticity: c.elasticity / 2 })) }
     const half = externalCostSavings(imp(0.1), a)
     half.forEach((r, i) => expect(r.eurPerYear).toBeCloseTo(base[i].eurPerYear / 2, 0))
   })
 
-  it('hängt nicht von den anderen Verbesserungen ab', () => {
+  it('does not depend on the other improvements', () => {
     const res = externalCostSavings({ transit: 0.5, rail: 0.28, bike: 0.16, car: 0 }, A)
     for (const r of res) expect(r.eurPerYear).toBe(0)
   })
 })
 
 describe('costBenefit', () => {
-  it('liefert eine Zeitreihe der Länge horizonYears (Jahre 1…n)', () => {
+  it('returns a time series of length horizonYears (years 1…n)', () => {
     const cb = costBenefit(149e9, 3.5e9, 13e9, A)
     expect(cb.timeline).toHaveLength(A.horizonYears)
     expect(cb.timeline.map((p) => p.year)).toEqual(Array.from({ length: A.horizonYears }, (_, i) => i + 1))
@@ -221,7 +221,7 @@ describe('costBenefit', () => {
     expect(short.timeline).toHaveLength(7)
   })
 
-  it('hat monoton nicht fallende kumulierte Kosten und Nutzen', () => {
+  it('has monotonically non-decreasing cumulative costs and benefits', () => {
     const cb = costBenefit(149e9, 3.5e9, 13e9, A)
     for (let i = 1; i < cb.timeline.length; i++) {
       expect(cb.timeline[i].cumulativeCost).toBeGreaterThanOrEqual(cb.timeline[i - 1].cumulativeCost)
@@ -229,8 +229,8 @@ describe('costBenefit', () => {
     }
   })
 
-  it('gibt die Investition nach buildYears vollständig aus', () => {
-    // Ohne Betriebskosten sind die kumulierten Kosten genau die Investition.
+  it('spends the investment in full after buildYears', () => {
+    // Without operating costs, the cumulative costs are exactly the investment.
     const cb = costBenefit(1000, 0, 0, A)
     expect(cb.timeline[A.buildYears - 2].cumulativeCost).toBeCloseTo(1000 * (A.buildYears - 1) / A.buildYears, 8)
     expect(cb.timeline[A.buildYears - 1].cumulativeCost).toBeCloseTo(1000, 8)
@@ -239,7 +239,7 @@ describe('costBenefit', () => {
     }
   })
 
-  it('hat nach der Bauzeit nur noch lineare Betriebskosten und Nutzen', () => {
+  it('has only linear operating costs and benefits after the build period', () => {
     const cb = costBenefit(1000, 10, 40, A)
     const t = cb.timeline
     const last = t[t.length - 1]
@@ -248,7 +248,7 @@ describe('costBenefit', () => {
     expect(last.cumulativeBenefit - prev.cumulativeBenefit).toBeCloseTo(40, 8)
   })
 
-  it('hat keinen Break-even ohne Kosten und ohne Nutzen', () => {
+  it('has no break-even without costs and without benefits', () => {
     const cb = costBenefit(0, 0, 0, A)
     expect(cb.breakEvenYear).toBeNull()
     for (const p of cb.timeline) {
@@ -257,22 +257,22 @@ describe('costBenefit', () => {
     }
   })
 
-  it('hat Break-even in Jahr 1, wenn es Nutzen aber keine Kosten gibt', () => {
+  it('has break-even in year 1 when there is a benefit but no costs', () => {
     expect(costBenefit(0, 0, 100, A).breakEvenYear).toBe(1)
   })
 
-  it('hat keinen Break-even, wenn der Nutzen winzig ist', () => {
+  it('has no break-even when the benefit is tiny', () => {
     expect(costBenefit(149e9, 3.5e9, 1, A).breakEvenYear).toBeNull()
     expect(costBenefit(1e9, 0, 1, A).breakEvenYear).toBeNull()
   })
 
-  it('findet das erste Kreuzungsjahr (Handrechnung)', () => {
-    // buildYears 2, Horizont 5; Investition 100, Betrieb 10/Jahr, Nutzen 40/Jahr.
-    // J1: Fortschritt 0,5 → Kosten 50 + 5 = 55, Nutzen 20
-    // J2: Fortschritt 1   → Kosten 55 + 50 + 10 = 115, Nutzen 60
-    // J3: Kosten 125, Nutzen 100
-    // J4: Kosten 135, Nutzen 140 → Break-even
-    // J5: Kosten 145, Nutzen 180
+  it('finds the first crossover year (hand calculation)', () => {
+    // buildYears 2, horizon 5; investment 100, operation 10/year, benefit 40/year.
+    // Y1: progress 0.5 → costs 50 + 5 = 55, benefit 20
+    // Y2: progress 1   → costs 55 + 50 + 10 = 115, benefit 60
+    // Y3: costs 125, benefit 100
+    // Y4: costs 135, benefit 140 → break-even
+    // Y5: costs 145, benefit 180
     const a = { ...A, buildYears: 2, horizonYears: 5 }
     const cb = costBenefit(100, 10, 40, a)
     const expected = [
@@ -290,18 +290,18 @@ describe('costBenefit', () => {
     expect(cb.breakEvenYear).toBe(4)
   })
 
-  it('meldet Break-even nicht, wenn er hinter dem Horizont liegt', () => {
+  it('does not report break-even when it lies beyond the horizon', () => {
     const a = { ...A, buildYears: 2, horizonYears: 3 }
     expect(costBenefit(100, 10, 40, a).breakEvenYear).toBeNull()
   })
 
-  it('zählt Gleichstand als Break-even (Nutzen >= Kosten)', () => {
-    // Jahr 1: Kosten 10, Nutzen 10
+  it('counts a tie as break-even (benefit >= costs)', () => {
+    // Year 1: costs 10, benefit 10
     const a = { ...A, buildYears: 1, horizonYears: 3 }
     expect(costBenefit(10, 0, 10, a).breakEvenYear).toBe(1)
   })
 
-  it('behandelt buildYears < 1 wie 1', () => {
+  it('treats buildYears < 1 as 1', () => {
     const a = { ...A, buildYears: 0, horizonYears: 3 }
     const cb = costBenefit(100, 0, 0, a)
     expect(cb.timeline[0].cumulativeCost).toBeCloseTo(100, 8)

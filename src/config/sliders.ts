@@ -3,19 +3,19 @@ import type { CountryData } from './countries'
 import { formatNumber, formatPercent } from '../lib/format'
 
 /**
- * Beschriftung und Kennzahl-Anzeige der Regler. Die Kennzahlen kommen aus den
- * Länderdaten, daher funktionieren neue Benchmark-Länder ohne Änderungen hier.
+ * Labels and metric display of the sliders. The metrics come from the
+ * country data, so new benchmark countries work without changes here.
  */
 export interface SliderDefinition {
   key: SliderKey
   label: string
-  /** Kurzer Erklärtext unter dem Titel. */
+  /** Short explanatory text below the title. */
   hint: string
-  /** Name der angezeigten Kennzahl, z. B. „Pünktlichkeit“. */
+  /** Name of the displayed metric, e.g. "Pünktlichkeit". */
   metricLabel: string
-  /** Formatierte Kennzahl im Szenario. */
+  /** Formatted metric in the scenario. */
   metric: (m: ScenarioMetrics) => string
-  /** Formatierte Kennzahl eines Landes (für „heute → Benchmark“). */
+  /** Formatted metric of a country (for "today → benchmark"). */
   countryMetric: (c: CountryData) => string
 }
 

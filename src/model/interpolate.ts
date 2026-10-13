@@ -1,20 +1,20 @@
 import type { CountryData } from '../config/countries'
 import type { Improvements, ScenarioMetrics, Sliders } from './types'
 
-/** Begrenzt x auf [min, max]. */
+/** Clamps x to [min, max]. */
 export function clamp(x: number, min = 0, max = 1): number {
   if (Number.isNaN(x)) return min
   return Math.min(max, Math.max(min, x))
 }
 
-/** Lineare Interpolation: t = 0 → from, t = 1 → to. t wird auf [0, 1] begrenzt. */
+/** Linear interpolation: t = 0 → from, t = 1 → to. t is clamped to [0, 1]. */
 export function lerp(from: number, to: number, t: number): number {
   return from + (to - from) * clamp(t)
 }
 
 /**
- * Kennzahlen im Szenario: Jeder Regler interpoliert linear zwischen dem
- * deutschen Wert und dem Benchmark-Wert der zugehörigen Kennzahlen.
+ * Scenario metrics: each slider interpolates linearly between the
+ * German value and the benchmark value of its associated metrics.
  */
 export function scenarioMetrics(base: CountryData, bench: CountryData, s: Sliders): ScenarioMetrics {
   return {
@@ -30,8 +30,8 @@ export function scenarioMetrics(base: CountryData, bench: CountryData, s: Slider
 }
 
 /**
- * Verbesserungen gegenüber Deutschland (alle ≥ 0). Grundlage für alle Effekte.
- * Bei schlechteren Benchmark-Werten wird 0 angesetzt.
+ * Improvements over Germany (all ≥ 0). Basis for all effects.
+ * Worse benchmark values are counted as 0.
  */
 export function improvements(base: CountryData, m: ScenarioMetrics): Improvements {
   return {

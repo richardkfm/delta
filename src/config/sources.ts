@@ -1,24 +1,24 @@
 /**
- * Quellenverzeichnis. Werte in `countries.ts` und `assumptions.ts` verweisen in
- * ihren Kommentaren mit [Quelle: <id>] auf diese Einträge. Der Footer der App
- * listet alle Quellen verlinkt auf. Stand der Recherche: Oktober 2026.
+ * Source registry. Values in `countries.ts` and `assumptions.ts` reference these
+ * entries in their comments with [Source: <id>]. The app footer lists all
+ * sources with links. Research as of: October 2026.
  */
 export interface Source {
-  /** Kurz-ID für Verweise aus der Config, z. B. "mid2017". */
+  /** Short ID for references from the config, e.g. "mid2017". */
   id: string
-  /** Titel der Veröffentlichung oder Seite. */
+  /** Title of the publication or page. */
   title: string
-  /** Herausgeber. */
+  /** Publisher. */
   publisher: string
-  /** Bezugsjahr der Daten bzw. Erscheinungsjahr. */
+  /** Reference year of the data or publication year. */
   year: string
   url: string
-  /** Wofür die Quelle im Modell verwendet wird. */
+  /** What the source is used for in the model. */
   usedFor: string
 }
 
 export const SOURCES: Source[] = [
-  // ---------- Mobilität Deutschland ----------
+  // ---------- Mobility Germany ----------
   {
     id: 'mid2023-zusammenfassung',
     title: 'Mobilität in Deutschland – MiD 2023, Studienzusammenfassung',
@@ -75,7 +75,7 @@ export const SOURCES: Source[] = [
     url: 'https://www.kba.de/DE/Presse/Pressemitteilungen/Allgemein/2024/pm21_2024_Entw_Fahrleistung.html',
     usedFor: 'Pkw-Kilometer pro Person',
   },
-  // ---------- Mobilität Niederlande ----------
+  // ---------- Mobility Netherlands ----------
   {
     id: 'cbs-odin-persoon',
     title: 'Mobiliteit; per persoon, persoonskenmerken, vervoerwijzen en regio’s (ODiN, Tabelle 84709NED)',
@@ -100,7 +100,7 @@ export const SOURCES: Source[] = [
     url: 'https://opendata.cbs.nl/ODataApi/odata/83474NED/TypedDataSet',
     usedFor: 'Einwohnerzahl Niederlande',
   },
-  // ---------- Bahn ----------
+  // ---------- Rail ----------
   {
     id: 'db-2025',
     title: 'Deutsche Bahn: Schritt nach vorn bei Umsatz und operativem Ergebnis',
@@ -133,7 +133,7 @@ export const SOURCES: Source[] = [
     url: 'https://www.bundesrechnungshof.de/fileadmin/import/___Alte_Struktur/Downloads/DE/Berichte/2025/riedbahn-volltext-riedbahn-volltext.pdf',
     usedFor: 'Sanierungskosten Schiene pro km, Umfang der Korridore',
   },
-  // ---------- ÖPNV ----------
+  // ---------- Public transit ----------
   {
     id: 'agora-oev-atlas-2026',
     title: 'ÖV-Atlas zeigt große Unterschiede beim Bus- und Bahnangebot',
@@ -190,7 +190,7 @@ export const SOURCES: Source[] = [
     url: 'https://correctiv.org/faktencheck/aus-der-community/2026/01/15/deutschlandticket-tiktok-video-erfindet-drastischen-preisanstieg-fuer-2026/',
     usedFor: 'Ticketpreis (63 €/Monat)',
   },
-  // ---------- Rad ----------
+  // ---------- Cycling ----------
   {
     id: 'fietsberaad-2012',
     title: 'Bijna 35.000 km fietspad in Nederland',
@@ -215,7 +215,7 @@ export const SOURCES: Source[] = [
     url: 'https://wirtschaft.hessen.de/sites/wirtschaft.hessen.de/files/2021-07/210629_faq_radwege_2_1.pdf',
     usedFor: 'Baukosten Radweg pro km',
   },
-  // ---------- Kosten Auto ----------
+  // ---------- Car costs ----------
   {
     id: 'adac-autokosten',
     title: 'Kilometerkosten berechnen (nach ADAC-Autokostenübersicht 2026)',
@@ -232,7 +232,7 @@ export const SOURCES: Source[] = [
     url: 'https://www.adac.de/rund-ums-fahrzeug/auto-kaufen-verkaufen/autokosten/guenstigste-autos-untere-mittelklasse/',
     usedFor: 'Methodik der Auto-Vollkosten',
   },
-  // ---------- Folgekosten ----------
+  // ---------- External costs ----------
   {
     id: 'infras-2019',
     title: 'Externe Kosten des Verkehrs in Deutschland',
@@ -275,7 +275,7 @@ export const SOURCES: Source[] = [
   },
 ]
 
-/** Liefert eine Quelle zur ID (oder undefined). */
+/** Returns a source for the ID (or undefined). */
 export function getSource(id: string): Source | undefined {
   return SOURCES.find((s) => s.id === id)
 }

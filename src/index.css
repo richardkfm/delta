@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Eine Akzentfarbe, sonst Graustufen – sachlicher Datenjournalismus-Stil. */
+/* One accent color, otherwise grayscale – sober data-journalism style. */
 @theme {
   --color-accent: #0b6e4f;
   --color-accent-soft: #e3f1ec;
@@ -22,7 +22,7 @@ body {
   font-feature-settings: "tnum" 1, "cv11" 1;
 }
 
-/* Regler: schlanke Spur, Akzent-Daumen, gut greifbar auf Touch-Geräten. */
+/* Slider: slim track, accent thumb, easy to grab on touch devices. */
 input[type="range"].slider {
   -webkit-appearance: none;
   appearance: none;

@@ -10,17 +10,17 @@ const LOCATIONS: Location[] = ['grossstadt', 'kleinstadt', 'land']
 const P_DE = GERMANY.railPunctuality
 
 const ZERO: Improvements = { transit: 0, rail: 0, bike: 0, car: 0 }
-/** Verbesserungen bei vollem Benchmark-Niveau (Niederlande), aus der Config abgeleitet. */
+/** Improvements at full benchmark level (Netherlands), derived from the config. */
 const NL_FULL: Improvements = improvements(
   GERMANY,
   scenarioMetrics(GERMANY, BENCHMARKS[0], { transit: 1, rail: 1, bike: 1, car: 1 }),
 )
-/** Verbesserungen, bei denen jede Dimension ihre Referenzverbesserung genau erreicht. */
+/** Improvements at which each dimension exactly reaches its reference improvement. */
 const REF_FULL: Improvements = { ...A.carAbolishReferenceImprovement }
 
 /**
- * Handrechenbare Annahmen, unabhängig von der Config: Formeltests mit festen Zahlen
- * verwenden diese, damit Änderungen an den belegten Werten sie nicht brechen.
+ * Hand-calculable assumptions, independent of the config: formula tests with fixed numbers
+ * use these so that changes to the sourced values do not break them.
  */
 const H: Assumptions = {
   ...A,
@@ -48,7 +48,7 @@ const H: Assumptions = {
   valueOfTimePerHour: 8,
 }
 const P_H = 0.62
-/** Volles Referenzniveau unter H. */
+/** Full reference level under H. */
 const H_FULL: Improvements = { ...H.carAbolishReferenceImprovement }
 
 const profile = (location: Location = 'kleinstadt', commuteKm = 17, cars: CarCount = 1): Profile => ({
@@ -57,10 +57,10 @@ const profile = (location: Location = 'kleinstadt', commuteKm = 17, cars: CarCou
   cars,
 })
 
-describe('timeSavings – Pendelzeit (nur ÖPNV-Takt)', () => {
+describe('timeSavings – commute time (transit frequency only)', () => {
   const imp: Improvements = { ...ZERO, transit: 0.5 }
 
-  it('ist ohne Verbesserung null', () => {
+  it('is zero without improvement', () => {
     const t = timeSavings(ZERO, profile(), P_DE, A)
     expect(t.commuteMin).toBe(0)
     expect(t.bufferMin).toBe(0)
@@ -69,7 +69,7 @@ describe('timeSavings – Pendelzeit (nur ÖPNV-Takt)', () => {
     expect(t.totalHoursPerWeek).toBe(0)
   })
 
-  it('Handrechnung Kleinstadt, 17 km: 60 × 0,36 × 0,5 × 1,0 × 5 = 54 Min./Woche', () => {
+  it('hand calculation small town, 17 km: 60 × 0.36 × 0.5 × 1.0 × 5 = 54 min/week', () => {
     const t = timeSavings(imp, profile('kleinstadt', 17), P_H, H)
     expect(t.commuteMin).toBeCloseTo(54, 10)
     expect(t.bufferMin).toBe(0)
@@ -78,7 +78,7 @@ describe('timeSavings – Pendelzeit (nur ÖPNV-Takt)', () => {
     expect(t.totalHoursPerWeek).toBeCloseTo(0.9, 10)
   })
 
-  it('entspricht mit den Config-Annahmen der Formel Pendelzeit × Distanz/Ø-Distanz × Elastizität × Verbesserung × Wohnlage × Arbeitstage', () => {
+  it('matches the formula commute time × distance/average distance × elasticity × improvement × location × work days with the config assumptions', () => {
     for (const loc of LOCATIONS) {
       const km = 2 * A.averageCommuteKm
       const expected =
@@ -87,39 +87,39 @@ describe('timeSavings – Pendelzeit (nur ÖPNV-Takt)', () => {
     }
   })
 
-  it('skaliert linear mit der Pendeldistanz', () => {
+  it('scales linearly with commute distance', () => {
     const t17 = timeSavings(imp, profile('kleinstadt', 17), P_DE, A).commuteMin
     expect(timeSavings(imp, profile('kleinstadt', 34), P_DE, A).commuteMin).toBeCloseTo(2 * t17, 10)
     expect(timeSavings(imp, profile('kleinstadt', 8.5), P_DE, A).commuteMin).toBeCloseTo(t17 / 2, 10)
     expect(timeSavings(imp, profile('kleinstadt', 40), P_DE, A).commuteMin).toBeCloseTo((t17 * 40) / 17, 10)
   })
 
-  it('skaliert linear mit der Taktverbesserung', () => {
+  it('scales linearly with the frequency improvement', () => {
     const a = timeSavings({ ...ZERO, transit: 0.1 }, profile(), P_DE, A).commuteMin
     const b = timeSavings({ ...ZERO, transit: 0.3 }, profile(), P_DE, A).commuteMin
     expect(b).toBeCloseTo(3 * a, 10)
   })
 
-  it('wendet den Wohnlagefaktor an', () => {
+  it('applies the location factor', () => {
     for (const loc of LOCATIONS) {
       const t = timeSavings(imp, profile(loc, 17), P_H, H)
       expect(t.commuteMin).toBeCloseTo(54 * H.locationFactors[loc].transit, 10)
     }
   })
 
-  it('ist bei 0 km Pendeldistanz null', () => {
+  it('is zero at 0 km commute distance', () => {
     expect(timeSavings(imp, profile('kleinstadt', 0), P_DE, A).commuteMin).toBe(0)
   })
 
-  it('behandelt negative Distanzen wie 0', () => {
+  it('treats negative distances as 0', () => {
     const t = timeSavings({ ...NL_FULL, bike: 0 }, profile('kleinstadt', -10), P_DE, A)
     expect(t.commuteMin).toBe(0)
     expect(t.bufferMin).toBe(0)
   })
 })
 
-describe('timeSavings – Pufferzeit (nur Bahn-Pünktlichkeit)', () => {
-  it('Handrechnung 17 km, +0,19 Pünktlichkeit: 10 × 0,19/0,38 × 5 = 25 Min./Woche', () => {
+describe('timeSavings – buffer time (rail punctuality only)', () => {
+  it('hand calculation 17 km, +0.19 punctuality: 10 × 0.19/0.38 × 5 = 25 min/week', () => {
     const t = timeSavings({ ...ZERO, rail: 0.19 }, profile('kleinstadt', 17), P_H, H)
     expect(t.bufferMin).toBeCloseTo(25, 10)
     expect(t.commuteMin).toBe(0)
@@ -127,26 +127,26 @@ describe('timeSavings – Pufferzeit (nur Bahn-Pünktlichkeit)', () => {
     expect(t.totalMinPerWeek).toBeCloseTo(25, 10)
   })
 
-  it('Handrechnung 17 km, +0,28 Pünktlichkeit: 10 × 0,28/0,38 × 5 ≈ 36,84 Min./Woche', () => {
+  it('hand calculation 17 km, +0.28 punctuality: 10 × 0.28/0.38 × 5 ≈ 36.84 min/week', () => {
     const t = timeSavings({ ...ZERO, rail: 0.28 }, profile('kleinstadt', 17), P_H, H)
     expect(t.bufferMin).toBeCloseTo((10 * 0.28 * 5) / 0.38, 8)
   })
 
-  it('NL-Niveau mit Config-Annahmen: Puffer × Gewinn/(1 − p_DE) × Arbeitstage, gedeckelt', () => {
+  it('NL level with config assumptions: buffer × gain/(1 − p_DE) × work days, capped', () => {
     const t = timeSavings({ ...ZERO, rail: NL_FULL.rail }, profile('kleinstadt', A.averageCommuteKm), P_DE, A)
     const perDay = Math.min(A.bufferMinutesPerDay, (A.bufferMinutesPerDay * NL_FULL.rail) / (1 - P_DE))
     expect(t.bufferMin).toBeCloseTo(perDay * A.locationFactors.kleinstadt.rail * A.workDaysPerWeek, 8)
   })
 
-  it('ist auf bufferMinutesPerDay (× Arbeitstage) gedeckelt', () => {
-    // 0,38 Gewinn = komplette Unpünktlichkeit beseitigt; mehr darf nicht mehr bringen.
+  it('is capped at bufferMinutesPerDay (× work days)', () => {
+    // 0.38 gain = unpunctuality eliminated entirely; more must not yield anything further.
     const full = timeSavings({ ...ZERO, rail: 0.38 }, profile('kleinstadt', 17), P_H, H).bufferMin
     const over = timeSavings({ ...ZERO, rail: 0.9 }, profile('kleinstadt', 17), P_H, H).bufferMin
     expect(full).toBeCloseTo(H.bufferMinutesPerDay * H.workDaysPerWeek, 10)
     expect(over).toBeCloseTo(H.bufferMinutesPerDay * H.workDaysPerWeek, 10)
   })
 
-  it('wird mit min(1, Pendeldistanz / Ø-Distanz) gewichtet', () => {
+  it('is weighted by min(1, commute distance / average distance)', () => {
     const imp: Improvements = { ...ZERO, rail: 0.19 }
     const full = timeSavings(imp, profile('kleinstadt', 17), P_H, H).bufferMin
     expect(timeSavings(imp, profile('kleinstadt', 8.5), P_H, H).bufferMin).toBeCloseTo(full / 2, 10)
@@ -154,11 +154,11 @@ describe('timeSavings – Pufferzeit (nur Bahn-Pünktlichkeit)', () => {
     expect(timeSavings(imp, profile('kleinstadt', 40), P_H, H).bufferMin).toBeCloseTo(full, 10)
   })
 
-  it('ist bei 0 km Pendeldistanz null', () => {
+  it('is zero at 0 km commute distance', () => {
     expect(timeSavings({ ...ZERO, rail: 0.28 }, profile('kleinstadt', 0), P_DE, A).bufferMin).toBe(0)
   })
 
-  it('wendet den Wohnlagefaktor Bahn an', () => {
+  it('applies the rail location factor', () => {
     const imp: Improvements = { ...ZERO, rail: 0.19 }
     for (const loc of LOCATIONS) {
       const t = timeSavings(imp, profile(loc, 17), P_H, H)
@@ -166,15 +166,15 @@ describe('timeSavings – Pufferzeit (nur Bahn-Pünktlichkeit)', () => {
     }
   })
 
-  it('liefert bei Basispünktlichkeit 1 keine Division durch 0', () => {
+  it('does not divide by 0 at base punctuality 1', () => {
     const t = timeSavings({ ...ZERO, rail: 0.1 }, profile(), 1, A)
     expect(t.bufferMin).toBe(0)
     expect(Number.isFinite(t.totalMinPerWeek)).toBe(true)
   })
 })
 
-describe('timeSavings – Alltagswege (nur Rad)', () => {
-  it('Handrechnung Kleinstadt: 300 × 0,75 × 0,16 × 1,0 = 36 Min./Woche', () => {
+describe('timeSavings – everyday trips (bike only)', () => {
+  it('hand calculation small town: 300 × 0.75 × 0.16 × 1.0 = 36 min/week', () => {
     const t = timeSavings({ ...ZERO, bike: 0.16 }, profile('kleinstadt', 17), P_H, H)
     expect(t.everydayMin).toBeCloseTo(36, 10)
     expect(t.commuteMin).toBe(0)
@@ -182,14 +182,14 @@ describe('timeSavings – Alltagswege (nur Rad)', () => {
     expect(t.totalMinPerWeek).toBeCloseTo(36, 10)
   })
 
-  it('wendet den Wohnlagefaktor Rad an', () => {
+  it('applies the bike location factor', () => {
     for (const loc of LOCATIONS) {
       const t = timeSavings({ ...ZERO, bike: 0.16 }, profile(loc, 17), P_H, H)
       expect(t.everydayMin).toBeCloseTo(36 * H.locationFactors[loc].bike, 10)
     }
   })
 
-  it('entspricht mit den Config-Annahmen Alltagszeit × Elastizität × Zuwachs Radanteil × Wohnlage', () => {
+  it('matches everyday time × elasticity × increase in bike share × location with the config assumptions', () => {
     for (const loc of LOCATIONS) {
       const t = timeSavings({ ...ZERO, bike: NL_FULL.bike }, profile(loc), P_DE, A)
       const expected =
@@ -198,7 +198,7 @@ describe('timeSavings – Alltagswege (nur Rad)', () => {
     }
   })
 
-  it('hängt nicht von der Pendeldistanz ab', () => {
+  it('does not depend on commute distance', () => {
     const imp: Improvements = { ...ZERO, bike: 0.16 }
     const a = timeSavings(imp, profile('grossstadt', 0), P_DE, A).everydayMin
     const b = timeSavings(imp, profile('grossstadt', 40), P_DE, A).everydayMin
@@ -207,21 +207,21 @@ describe('timeSavings – Alltagswege (nur Rad)', () => {
   })
 })
 
-describe('timeSavings – Summe', () => {
-  it('addiert alle Komponenten, Stunden = Minuten / 60', () => {
+describe('timeSavings – total', () => {
+  it('adds all components, hours = minutes / 60', () => {
     const t = timeSavings(NL_FULL, profile('grossstadt', 17), P_DE, A)
     expect(t.totalMinPerWeek).toBeCloseTo(t.commuteMin + t.bufferMin + t.everydayMin, 10)
     expect(t.totalHoursPerWeek).toBeCloseTo(t.totalMinPerWeek / 60, 10)
   })
 
-  it('ist bei 0 km nur noch die Alltagskomponente (Pendeln + Puffer = 0)', () => {
+  it('is only the everyday component at 0 km (commuting + buffer = 0)', () => {
     const t = timeSavings(NL_FULL, profile('kleinstadt', 0), P_DE, A)
     expect(t.commuteMin + t.bufferMin).toBe(0)
     expect(t.totalMinPerWeek).toBeCloseTo(t.everydayMin, 10)
     expect(t.everydayMin).toBeGreaterThan(0)
   })
 
-  it('nutzt die übergebenen Annahmen', () => {
+  it('uses the assumptions passed in', () => {
     const a = { ...H, workDaysPerWeek: 4 }
     const t = timeSavings({ ...ZERO, transit: 0.5 }, profile('kleinstadt', 17), P_H, a)
     expect(t.commuteMin).toBeCloseTo(60 * 0.36 * 0.5 * 4, 10)
@@ -229,11 +229,11 @@ describe('timeSavings – Summe', () => {
 })
 
 describe('carAbolishProbability', () => {
-  it('ist ohne Verbesserungen 0', () => {
+  it('is 0 without improvements', () => {
     for (const loc of LOCATIONS) expect(carAbolishProbability(ZERO, profile(loc), A)).toBe(0)
   })
 
-  it('entspricht beim vollen Referenzniveau der Obergrenze der Wohnlage', () => {
+  it('equals the location cap at full reference level', () => {
     for (const loc of LOCATIONS) {
       expect(carAbolishProbability(REF_FULL, profile(loc), A)).toBeCloseTo(
         A.locationFactors[loc].maxCarAbolishProbability,
@@ -242,7 +242,7 @@ describe('carAbolishProbability', () => {
     }
   })
 
-  it('überschreitet bei vollem NL-Niveau die Obergrenze der Wohnlage nie und liegt knapp darunter oder darauf', () => {
+  it('never exceeds the location cap at full NL level and lies just below or at it', () => {
     for (const loc of LOCATIONS) {
       const cap = A.locationFactors[loc].maxCarAbolishProbability
       const p = carAbolishProbability(NL_FULL, profile(loc), A)
@@ -251,7 +251,7 @@ describe('carAbolishProbability', () => {
     }
   })
 
-  it('ist in jeder einzelnen Verbesserung monoton steigend', () => {
+  it('is monotonically increasing in each individual improvement', () => {
     const keys = ['transit', 'rail', 'bike', 'car'] as const
     for (const k of keys) {
       let prev = -1
@@ -265,14 +265,14 @@ describe('carAbolishProbability', () => {
     }
   })
 
-  it('Handrechnung: nur Takt halbiert (volle Referenz) → Gewicht 0,35 × Obergrenze', () => {
+  it('hand calculation: only headway halved (full reference) → weight 0.35 × cap', () => {
     const imp: Improvements = { ...ZERO, transit: 0.5 }
     expect(carAbolishProbability(imp, profile('grossstadt'), H)).toBeCloseTo(0.35 * 0.7, 10)
     expect(carAbolishProbability(imp, profile('kleinstadt'), H)).toBeCloseTo(0.35 * 0.45, 10)
     expect(carAbolishProbability(imp, profile('land'), H)).toBeCloseTo(0.35 * 0.25, 10)
   })
 
-  it('entspricht mit den Config-Annahmen bei voller Referenz nur beim Takt: Gewicht Takt × Obergrenze', () => {
+  it('with the config assumptions and full reference on headway only equals: headway weight × cap', () => {
     const imp: Improvements = { ...ZERO, transit: A.carAbolishReferenceImprovement.transit }
     for (const loc of LOCATIONS) {
       expect(carAbolishProbability(imp, profile(loc), A)).toBeCloseTo(
@@ -282,14 +282,14 @@ describe('carAbolishProbability', () => {
     }
   })
 
-  it('begrenzt jeden Beitrag auf seine Referenzverbesserung', () => {
+  it('limits each contribution to its reference improvement', () => {
     const over: Improvements = { transit: 0.99, rail: 0.99, bike: 0.99, car: 0.99 }
     for (const loc of LOCATIONS) {
       expect(carAbolishProbability(over, profile(loc), A)).toBeCloseTo(A.locationFactors[loc].maxCarAbolishProbability, 10)
     }
   })
 
-  it('ordnet Großstadt > Kleinstadt > Land', () => {
+  it('orders big city > small town > countryside', () => {
     for (const imp of [NL_FULL, { ...ZERO, transit: 0.2, bike: 0.05 }]) {
       const g = carAbolishProbability(imp, profile('grossstadt'), A)
       const k = carAbolishProbability(imp, profile('kleinstadt'), A)
@@ -300,7 +300,7 @@ describe('carAbolishProbability', () => {
     }
   })
 
-  it('liegt immer in [0, 1]', () => {
+  it('is always within [0, 1]', () => {
     for (const loc of LOCATIONS) {
       const p = carAbolishProbability({ transit: 5, rail: 5, bike: 5, car: 5 }, profile(loc), A)
       expect(p).toBeGreaterThanOrEqual(0)
@@ -309,10 +309,10 @@ describe('carAbolishProbability', () => {
   })
 })
 
-describe('moneySavings – ein Auto', () => {
+describe('moneySavings – one car', () => {
   const saving = (A.carFullCostPerMonth - A.transitTicketPerMonth) * 12
 
-  it('total = Wahrscheinlichkeit × (Auto-Vollkosten − Ticket) × 12', () => {
+  it('total = probability × (full car cost − ticket) × 12', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 1)
       const time = timeSavings(NL_FULL, pr, P_DE, A)
@@ -326,22 +326,22 @@ describe('moneySavings – ein Auto', () => {
     }
   })
 
-  it('Großstadt bei vollem Referenzniveau (Handrechnung): 0,7 × 5880 = 4116 €', () => {
+  it('big city at full reference level (hand calculation): 0.7 × 5880 = 4116 €', () => {
     const pr = profile('grossstadt', 17, 1)
     const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
     expect(m.savingsIfCarAbolished).toBe(5880)
     expect(m.totalPerYear).toBeCloseTo(4116, 8)
   })
 
-  it('ist ohne Verbesserungen 0', () => {
+  it('is 0 without improvements', () => {
     const pr = profile('grossstadt', 17, 1)
     const m = moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A)
     expect(m.totalPerYear).toBe(0)
     expect(m.carAbolishProbability).toBe(0)
   })
 
-  it('wird bei kleiner maxProbability gedeckelt', () => {
-    // Obergrenze unter der Wohnlage-Obergrenze, damit sie greift.
+  it('is capped at a small maxProbability', () => {
+    // Cap below the location cap so that it takes effect.
     const cap = A.locationFactors.grossstadt.maxCarAbolishProbability / 2
     const a = { ...A, maxProbability: cap }
     const pr = profile('grossstadt', 17, 1)
@@ -350,7 +350,7 @@ describe('moneySavings – ein Auto', () => {
     expect(m.totalPerYear).toBeCloseTo(cap * saving, 8)
   })
 
-  it('verwendet die übergebenen Kosten', () => {
+  it('uses the costs passed in', () => {
     const a = { ...A, carFullCostPerMonth: 400, transitTicketPerMonth: 100 }
     const pr = profile('grossstadt', 17, 1)
     const m = moneySavings(NL_FULL, pr, timeSavings(NL_FULL, pr, P_DE, a), a)
@@ -358,10 +358,10 @@ describe('moneySavings – ein Auto', () => {
   })
 })
 
-describe('moneySavings – zwei oder mehr Autos', () => {
+describe('moneySavings – two or more cars', () => {
   const saving = (A.carFullCostPerMonth - A.transitTicketPerMonth) * 12
 
-  it('Wahrscheinlichkeit × Zweitwagen-Faktor, gedeckelt bei maxProbability', () => {
+  it('probability × second-car factor, capped at maxProbability', () => {
     for (const loc of LOCATIONS) {
       const pr1 = profile(loc, 17, 1)
       const pr2 = profile(loc, 17, 2)
@@ -376,34 +376,34 @@ describe('moneySavings – zwei oder mehr Autos', () => {
     }
   })
 
-  it('Kleinstadt (ungedeckelt): 0,45 × 1,4 = 0,63', () => {
+  it('small town (uncapped): 0.45 × 1.4 = 0.63', () => {
     const pr = profile('kleinstadt', 17, 2)
     const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
     expect(m.carAbolishProbability).toBeCloseTo(0.63, 10)
   })
 
-  it('Großstadt: 0,7 × 1,4 = 0,98 wird auf 0,95 gedeckelt', () => {
+  it('big city: 0.7 × 1.4 = 0.98 is capped at 0.95', () => {
     const pr = profile('grossstadt', 17, 2)
     const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
     expect(m.carAbolishProbability).toBeCloseTo(0.95, 10)
     expect(m.totalPerYear).toBeCloseTo(0.95 * 5880, 8)
   })
 
-  it('ist ohne Verbesserungen 0', () => {
+  it('is 0 without improvements', () => {
     const pr = profile('grossstadt', 17, 2)
     expect(moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A).totalPerYear).toBe(0)
   })
 })
 
-describe('moneySavings – Haushalte ohne Auto', () => {
-  it('hat keinen Autoeffekt', () => {
+describe('moneySavings – households without a car', () => {
+  it('has no car effect', () => {
     const pr = profile('grossstadt', 17, 0)
     const m = moneySavings(NL_FULL, pr, timeSavings(NL_FULL, pr, P_DE, A), A)
     expect(m.carAbolishProbability).toBe(0)
     expect(m.savingsIfCarAbolished).toBe(0)
   })
 
-  it('total = besseres Angebot + Zeitwert', () => {
+  it('total = better service + time value', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 0)
       const t = timeSavings(NL_FULL, pr, P_DE, A)
@@ -413,13 +413,13 @@ describe('moneySavings – Haushalte ohne Auto', () => {
     }
   })
 
-  it('besseres Angebot bei vollem Referenzangebot: Ersatzkosten × max. Reduktion × 1', () => {
+  it('better service at full reference service: substitute costs × max. reduction × 1', () => {
     const pr = profile('kleinstadt', 17, 0)
     const m = moneySavings(REF_FULL, pr, timeSavings(REF_FULL, pr, P_DE, A), A)
     expect(m.betterServicePerYear).toBeCloseTo(A.noCarSubstituteCostPerYear * A.noCarSubstituteReductionMax, 10)
   })
 
-  it('Angebotsindex ignoriert den Autoanteil', () => {
+  it('service index ignores the car share', () => {
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, car: 0.3 }
     const m = moneySavings(imp, pr, timeSavings(imp, pr, P_DE, A), A)
@@ -427,7 +427,7 @@ describe('moneySavings – Haushalte ohne Auto', () => {
     expect(m.totalPerYear).toBe(0)
   })
 
-  it('Handrechnung nur Takt: Index 0,35 / 0,75 → 600 × 0,5 × 0,4667 = 140 €', () => {
+  it('hand calculation headway only: index 0.35 / 0.75 → 600 × 0.5 × 0.4667 = 140 €', () => {
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, transit: 0.5 }
     const t = timeSavings(imp, pr, P_H, H)
@@ -436,7 +436,7 @@ describe('moneySavings – Haushalte ohne Auto', () => {
     expect(m.timeValuePerYear).toBeCloseTo(0.9 * 46 * 8, 8)
   })
 
-  it('Angebotsindex nur Takt = Gewicht Takt / Summe der Angebotsgewichte (Config-Annahmen)', () => {
+  it('service index headway only = headway weight / sum of service weights (config assumptions)', () => {
     const w = A.carAbolishWeights
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, transit: A.carAbolishReferenceImprovement.transit }
@@ -445,7 +445,7 @@ describe('moneySavings – Haushalte ohne Auto', () => {
     expect(m.betterServicePerYear).toBeCloseTo(A.noCarSubstituteCostPerYear * A.noCarSubstituteReductionMax * index, 10)
   })
 
-  it('ist ohne Verbesserungen 0 (Angebot und Zeitwert)', () => {
+  it('is 0 without improvements (service and time value)', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 0)
       const m = moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A)

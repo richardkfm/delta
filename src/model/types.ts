@@ -1,14 +1,14 @@
 import type { CarCount, Location } from '../config/assumptions'
 
-/** Reglerstellungen, jeweils 0 (Deutschland heute) bis 1 (Benchmark-Niveau). */
+/** Slider positions, each from 0 (Germany today) to 1 (benchmark level). */
 export interface Sliders {
-  /** ÖPNV-Takt & Netzdichte */
+  /** Public transit frequency & network density */
   transit: number
-  /** Bahn-Pünktlichkeit */
+  /** Rail punctuality */
   rail: number
-  /** Radinfrastruktur */
+  /** Cycling infrastructure */
   bike: number
-  /** Autoabhängigkeit (Anteil der Wege mit dem Auto) */
+  /** Car dependence (share of trips made by car) */
   car: number
 }
 
@@ -16,16 +16,16 @@ export type SliderKey = keyof Sliders
 
 export const SLIDER_KEYS: SliderKey[] = ['transit', 'rail', 'bike', 'car']
 
-/** Persönliches Profil. */
+/** Personal profile. */
 export interface Profile {
   location: Location
-  /** Arbeitsweg einfach in km (0 = kein Pendeln). */
+  /** One-way commute in km (0 = no commuting). */
   commuteKm: number
-  /** Autos im Haushalt (2 steht für „2+“). */
+  /** Cars in the household (2 stands for "2+"). */
   cars: CarCount
 }
 
-/** Interpolierte Kennzahlen im aktuellen Szenario (echte Werte für die Anzeige). */
+/** Interpolated metrics in the current scenario (real values for display). */
 export interface ScenarioMetrics {
   transitHeadwayMin: number
   transitLaneKmPer100k: number
@@ -38,17 +38,17 @@ export interface ScenarioMetrics {
 }
 
 /**
- * Verbesserung gegenüber Deutschland je Dimension, immer ≥ 0.
- * Ist ein Benchmark-Land in einer Dimension schlechter als Deutschland,
- * bleibt die Verbesserung 0 (das Modell rechnet keine Verschlechterung).
+ * Improvement over Germany per dimension, always ≥ 0.
+ * If a benchmark country is worse than Germany in a dimension,
+ * the improvement stays 0 (the model does not count deteriorations).
  */
 export interface Improvements {
-  /** Relative Taktverkürzung: 1 − Takt(Szenario) / Takt(DE). */
+  /** Relative reduction in headway: 1 − headway(scenario) / headway(DE). */
   transit: number
-  /** Pünktlichkeitsgewinn in Anteilspunkten (0,28 = 28 Prozentpunkte). */
+  /** Punctuality gain in share points (0.28 = 28 percentage points). */
   rail: number
-  /** Zuwachs Radanteil in Anteilspunkten. */
+  /** Increase in bike share in share points. */
   bike: number
-  /** Relativer Rückgang des Autoanteils: 1 − Anteil(Szenario) / Anteil(DE). */
+  /** Relative decline in car share: 1 − share(scenario) / share(DE). */
   car: number
 }

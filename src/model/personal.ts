@@ -3,28 +3,28 @@ import { clamp } from './interpolate'
 import type { Improvements, Profile } from './types'
 
 export interface TimeSavings {
-  /** Kürzere Pendelzeit durch dichteren ÖPNV-Takt, Min./Woche. */
+  /** Shorter commute time from denser transit frequency, min/week. */
   commuteMin: number
-  /** Wegfallende Pufferzeit durch pünktlichere Bahn, Min./Woche. */
+  /** Buffer time saved through a more punctual railway, min/week. */
   bufferMin: number
-  /** Kürzere Alltagswege durch bessere Radinfrastruktur, Min./Woche. */
+  /** Shorter everyday trips from better cycling infrastructure, min/week. */
   everydayMin: number
-  /** Summe in Min./Woche. */
+  /** Total in min/week. */
   totalMinPerWeek: number
-  /** Summe in Std./Woche. */
+  /** Total in hours/week. */
   totalHoursPerWeek: number
 }
 
 /**
- * Persönliche Zeitersparnis pro Woche.
+ * Personal time savings per week.
  *
- * - Pendeln: Pendelzeit (skaliert mit der Distanz) × Takt-Elastizität ×
- *   relative Taktverkürzung × Wohnlagefaktor. Gilt als Mittel aus Umstieg
- *   auf den ÖPNV und weniger Stau für alle, die weiter Auto fahren.
- * - Puffer: Die heutige Pufferzeit ist proportional zur Unpünktlichkeit (1 − p).
- *   Ersparnis = Puffer × Pünktlichkeitsgewinn / (1 − p_DE). Nur für Pendelnde,
- *   anteilig bei kurzen Wegen (bis zum Ø-Arbeitsweg).
- * - Alltag: Alltagswege × Rad-Elastizität × Zuwachs Radanteil × Wohnlagefaktor.
+ * - Commuting: commute time (scaled by distance) × headway elasticity ×
+ *   relative headway reduction × location factor. Treated as an average of switching
+ *   to transit and less congestion for those who keep driving.
+ * - Buffer: today's buffer time is proportional to unpunctuality (1 − p).
+ *   Savings = buffer × punctuality gain / (1 − p_DE). Commuters only,
+ *   prorated for short trips (up to the average commute).
+ * - Everyday: everyday trips × bike elasticity × increase in bike share × location factor.
  */
 export function timeSavings(
   imp: Improvements,
@@ -35,11 +35,11 @@ export function timeSavings(
   const loc = a.locationFactors[profile.location]
   const commuteKm = Math.max(0, profile.commuteKm)
 
-  // Heutige Pendelzeit pro Tag, linear mit der Distanz skaliert (Ø-Pendelzeit beim Ø-Arbeitsweg).
+  // Today's commute time per day, scaled linearly with distance (average commute time at the average commute).
   const commuteMinPerDay = a.commuteMinutesPerDay * (commuteKm / a.averageCommuteKm)
   const commuteMin = commuteMinPerDay * a.transitCommuteElasticity * imp.transit * loc.transit * a.workDaysPerWeek
 
-  // Pufferanteil: volle Pufferzeit ab Ø-Arbeitsweg, darunter anteilig.
+  // Buffer share: full buffer time from the average commute upward, prorated below that.
   const bufferWeight = clamp(commuteKm / a.averageCommuteKm)
   const unpunctuality = 1 - baseRailPunctuality
   const bufferSavedPerDay = unpunctuality > 0 ? a.bufferMinutesPerDay * (imp.rail / unpunctuality) : 0
@@ -58,11 +58,11 @@ export function timeSavings(
 }
 
 /**
- * Wahrscheinlichkeit (0–1), dass der Haushalt auf ein Auto verzichten kann.
+ * Probability (0–1) that the household can give up a car.
  *
- * Jede Dimension trägt gewichtet bei, normiert auf ihre Referenzverbesserung
- * (≈ Abstand DE → NL). Das Ergebnis wird mit der Wohnlage-Obergrenze
- * multipliziert: In der Großstadt ist Autoverzicht viel leichter als auf dem Land.
+ * Each dimension contributes with a weight, normalised to its reference improvement
+ * (≈ gap DE → NL). The result is multiplied by the location cap:
+ * in a big city, going car-free is much easier than in the countryside.
  */
 export function carAbolishProbability(imp: Improvements, profile: Profile, a: Assumptions): number {
   const w = a.carAbolishWeights
@@ -76,26 +76,26 @@ export function carAbolishProbability(imp: Improvements, profile: Profile, a: As
 }
 
 export interface MoneySavings {
-  /** Erwartete Ersparnis in €/Jahr (Hauptzahl). */
+  /** Expected savings in €/year (headline figure). */
   totalPerYear: number
-  /** Wahrscheinlichkeit, ein Auto abzuschaffen (0 bei Haushalten ohne Auto). */
+  /** Probability of giving up a car (0 for households without a car). */
   carAbolishProbability: number
-  /** Ersparnis in €/Jahr, falls ein Auto tatsächlich abgeschafft wird (0 ohne Auto). */
+  /** Savings in €/year if a car is actually given up (0 without a car). */
   savingsIfCarAbolished: number
-  /** Ohne Auto: Ersparnis durch besseres Angebot (Taxi, Carsharing …) in €/Jahr. */
+  /** Without a car: savings from better service (taxi, car sharing …) in €/year. */
   betterServicePerYear: number
-  /** Ohne Auto: monetarisierter Zeitgewinn in €/Jahr. */
+  /** Without a car: monetised time gain in €/year. */
   timeValuePerYear: number
 }
 
 /**
- * Persönliche Geldersparnis pro Jahr.
+ * Personal money savings per year.
  *
- * - Mit Auto: Wahrscheinlichkeit × (Auto-Vollkosten − Ticketkosten) × 12.
- *   Das Ticket fällt nur an, wenn das Auto tatsächlich abgeschafft wird.
- *   Bei 2+ Autos geht es um den Zweitwagen: höhere Wahrscheinlichkeit.
- * - Ohne Auto: kein Autoeffekt. Ersparnis aus besserem Angebot (weniger Taxi,
- *   Carsharing, Mietwagen) plus Zeitgewinn × konservativer Zeitwert.
+ * - With a car: probability × (full car cost − ticket cost) × 12.
+ *   The ticket is only incurred if the car is actually given up.
+ *   With 2+ cars it is about the second car: higher probability.
+ * - Without a car: no car effect. Savings from better service (less taxi,
+ *   car sharing, rental cars) plus time gain × conservative value of time.
  */
 export function moneySavings(
   imp: Improvements,
@@ -106,7 +106,7 @@ export function moneySavings(
   if (profile.cars === 0) {
     const w = a.carAbolishWeights
     const ref = a.carAbolishReferenceImprovement
-    // Angebotsindex 0–1 aus den Angebotsdimensionen (ohne Autoanteil), gleiche Gewichte wie oben.
+    // Service index 0–1 from the service dimensions (excluding car share), same weights as above.
     const offerWeight = w.transit + w.rail + w.bike
     const offerScore =
       offerWeight > 0

@@ -18,36 +18,36 @@ const METRIC_KEYS: (keyof ScenarioMetrics)[] = [
 ]
 
 describe('clamp', () => {
-  it('lässt Werte im Intervall unverändert', () => {
+  it('leaves values within the interval unchanged', () => {
     expect(clamp(0.3)).toBe(0.3)
     expect(clamp(0)).toBe(0)
     expect(clamp(1)).toBe(1)
   })
-  it('begrenzt auf Standardintervall [0, 1]', () => {
+  it('clamps to the default interval [0, 1]', () => {
     expect(clamp(-5)).toBe(0)
     expect(clamp(7)).toBe(1)
   })
-  it('begrenzt auf eigenes Intervall', () => {
+  it('clamps to a custom interval', () => {
     expect(clamp(15, 10, 20)).toBe(15)
     expect(clamp(5, 10, 20)).toBe(10)
     expect(clamp(25, 10, 20)).toBe(20)
   })
-  it('liefert bei NaN die Untergrenze', () => {
+  it('returns the lower bound for NaN', () => {
     expect(clamp(NaN)).toBe(0)
     expect(clamp(NaN, 3, 9)).toBe(3)
   })
 })
 
 describe('lerp', () => {
-  it('interpoliert linear', () => {
+  it('interpolates linearly', () => {
     expect(lerp(10, 20, 0)).toBe(10)
     expect(lerp(10, 20, 1)).toBe(20)
     expect(lerp(10, 20, 0.25)).toBeCloseTo(12.5, 10)
   })
-  it('funktioniert auch absteigend', () => {
+  it('also works descending', () => {
     expect(lerp(20, 10, 0.5)).toBeCloseTo(15, 10)
   })
-  it('begrenzt t auf [0, 1]', () => {
+  it('clamps t to [0, 1]', () => {
     expect(lerp(10, 20, -1)).toBe(10)
     expect(lerp(10, 20, 2)).toBe(20)
     expect(lerp(10, 20, NaN)).toBe(10)
@@ -55,24 +55,24 @@ describe('lerp', () => {
 })
 
 describe('scenarioMetrics', () => {
-  it('liefert bei Reglern = 0 exakt die deutschen Werte', () => {
+  it('returns exactly the German values at sliders = 0', () => {
     const m = scenarioMetrics(GERMANY, NL, all(0))
     for (const k of METRIC_KEYS) expect(m[k]).toBe(GERMANY[k])
   })
 
-  it('liefert bei Reglern = 1 exakt die Benchmark-Werte', () => {
+  it('returns exactly the benchmark values at sliders = 1', () => {
     const m = scenarioMetrics(GERMANY, NL, all(1))
-    // Gleitkomma: from + (to − from) × 1 ist nicht immer bitgleich to.
+    // Floating point: from + (to − from) × 1 is not always bit-identical to to.
     for (const k of METRIC_KEYS) expect(m[k]).toBeCloseTo(NL[k], 10)
   })
 
-  it('liefert bei Reglern = 0,5 die Mittelwerte aller 8 Kennzahlen', () => {
+  it('returns the midpoints of all 8 metrics at sliders = 0.5', () => {
     const m = scenarioMetrics(GERMANY, NL, all(0.5))
     expect(METRIC_KEYS).toHaveLength(8)
     for (const k of METRIC_KEYS) expect(m[k]).toBeCloseTo((GERMANY[k] + NL[k]) / 2, 10)
   })
 
-  it('ordnet jeden Regler den richtigen Kennzahlen zu', () => {
+  it('maps each slider to the correct metrics', () => {
     const m = scenarioMetrics(GERMANY, NL, { transit: 1, rail: 0, bike: 0, car: 0 })
     expect(m.transitHeadwayMin).toBeCloseTo(NL.transitHeadwayMin, 10)
     expect(m.transitLaneKmPer100k).toBeCloseTo(NL.transitLaneKmPer100k, 10)
@@ -98,7 +98,7 @@ describe('scenarioMetrics', () => {
     expect(c.bikeShare).toBe(GERMANY.bikeShare)
   })
 
-  it('begrenzt Reglerwerte außerhalb [0, 1]', () => {
+  it('clamps slider values outside [0, 1]', () => {
     const lo = scenarioMetrics(GERMANY, NL, all(-3))
     const hi = scenarioMetrics(GERMANY, NL, all(4))
     for (const k of METRIC_KEYS) {
@@ -109,12 +109,12 @@ describe('scenarioMetrics', () => {
 })
 
 describe('improvements', () => {
-  it('ist bei Reglern = 0 überall null', () => {
+  it('is zero everywhere at sliders = 0', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, NL, all(0)))
     expect(imp).toEqual({ transit: 0, rail: 0, bike: 0, car: 0 })
   })
 
-  it('liefert bei Reglern = 1 die Niederlande-Werte', () => {
+  it('returns the Netherlands values at sliders = 1', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, NL, all(1)))
     expect(imp.transit).toBeCloseTo(1 - NL.transitHeadwayMin / GERMANY.transitHeadwayMin, 10)
     expect(imp.rail).toBeCloseTo(NL.railPunctuality - GERMANY.railPunctuality, 10)
@@ -122,7 +122,7 @@ describe('improvements', () => {
     expect(imp.car).toBeCloseTo(1 - NL.carShare / GERMANY.carShare, 10)
   })
 
-  it('wächst linear mit dem Regler (Regler 0,5 → halbe Anteilspunkte)', () => {
+  it('grows linearly with the slider (slider 0.5 → half the share points)', () => {
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, NL, all(0.5)))
     expect(imp.rail).toBeCloseTo((NL.railPunctuality - GERMANY.railPunctuality) / 2, 10)
     expect(imp.bike).toBeCloseTo((NL.bikeShare - GERMANY.bikeShare) / 2, 10)
@@ -130,7 +130,7 @@ describe('improvements', () => {
     expect(imp.transit).toBeCloseTo(1 - halfHeadway / GERMANY.transitHeadwayMin, 10)
   })
 
-  it('wird nie negativ, wenn ein Benchmark schlechter als Deutschland ist', () => {
+  it('never goes negative when a benchmark is worse than Germany', () => {
     const worse: CountryData = {
       id: 'bad',
       name: 'Schlechtland',
@@ -154,7 +154,7 @@ describe('improvements', () => {
     }
   })
 
-  it('bleibt in gemischten Benchmarks nur in den schlechteren Dimensionen bei 0', () => {
+  it('stays at 0 in mixed benchmarks only in the worse dimensions', () => {
     const mixed: CountryData = { ...NL, id: 'mix', bikeShare: 0.05, railPunctuality: 0.5 }
     const imp = improvements(GERMANY, scenarioMetrics(GERMANY, mixed, all(1)))
     expect(imp.bike).toBe(0)

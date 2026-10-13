@@ -3,33 +3,33 @@ import type { CountryData } from '../config/countries'
 import type { Improvements, ScenarioMetrics } from './types'
 
 export interface Investment {
-  /** Zusätzliche Radweg-km. */
+  /** Additional bike lane km. */
   bikeLaneKm: number
-  /** Zusätzliche ÖPNV-Trassen-km. */
+  /** Additional transit line km. */
   transitLaneKm: number
-  /** Zu ertüchtigende Schienen-km. */
+  /** Rail km to be upgraded. */
   railUpgradeKm: number
-  /** Investitionen je Bereich in €. */
+  /** Investments per area in €. */
   bikeEur: number
   transitEur: number
   railEur: number
-  /** Investitionsbedarf gesamt in €. */
+  /** Total investment need in €. */
   totalEur: number
-  /** Zusätzliche ÖPNV-Betriebskosten (netto nach Fahrgeld) in €/Jahr bei vollem Ausbau. */
+  /** Additional transit operating costs (net of fares) in €/year at full build-out. */
   extraOperatingEurPerYear: number
 }
 
 /**
- * Investitionsbedarf = Ausbaubedarf × Kosten pro km.
+ * Investment need = build-out need × cost per km.
  *
- * - Rad: Lücke bei Radweg-km je 1.000 Einw. × Einwohner × Kosten/km.
- * - ÖPNV: Lücke bei Trassen-km je 100.000 Einw. × Einwohner × Kosten/km.
- * - Bahn: Pünktlichkeitsgewinn in Prozentpunkten × km je Punkt × Kosten/km.
- * - Dazu laufende Mehrkosten für das bessere ÖPNV-Angebot (netto nach Fahrgeld):
- *   Betriebskosten × relativer Tempogewinn Tür-zu-Tür × nicht gedeckter Anteil.
- *   Annahme: Das Angebot (und damit der Aufwand) wächst so stark wie das Tempo.
- * Der Regler Autoabhängigkeit steht für Ordnungspolitik (Parkraum, Pricing)
- * und verursacht keine Infrastrukturkosten.
+ * - Bike: gap in bike lane km per 1,000 residents × residents × cost/km.
+ * - Transit: gap in line km per 100,000 residents × residents × cost/km.
+ * - Rail: punctuality gain in percentage points × km per point × cost/km.
+ * - Plus ongoing extra costs for the better transit service (net of fares):
+ *   operating costs × relative door-to-door speed gain × uncovered share.
+ *   Assumption: the service (and thus the effort) grows as much as the speed.
+ * The car dependence slider stands for regulatory policy (parking, pricing)
+ * and incurs no infrastructure costs.
  */
 export function investment(base: CountryData, m: ScenarioMetrics, imp: Improvements, a: Assumptions): Investment {
   const bikeLaneKm = Math.max(0, m.bikeLaneKmPer1000 - base.bikeLaneKmPer1000) * (a.population / 1_000)
@@ -62,8 +62,8 @@ export interface ExternalCostSaving {
 }
 
 /**
- * Jährliche Einsparung bei Folgekosten des Pkw-Verkehrs (gesellschaftliche Kosten):
- * Folgekosten × Elastizität × relativer Rückgang der Autofahrten.
+ * Annual savings in external costs of car traffic (societal costs):
+ * external costs × elasticity × relative decline in car trips.
  */
 export function externalCostSavings(imp: Improvements, a: Assumptions): ExternalCostSaving[] {
   return a.externalCosts.map((c) => ({
@@ -73,24 +73,24 @@ export function externalCostSavings(imp: Improvements, a: Assumptions): External
 }
 
 export interface TimelinePoint {
-  /** Jahr ab Start (1 … Horizont). */
+  /** Year from start (1 … horizon). */
   year: number
-  /** Kumulierte Kosten (Investition + Betrieb) in €. */
+  /** Cumulative costs (investment + operation) in €. */
   cumulativeCost: number
-  /** Kumulierter Nutzen (vermiedene Folgekosten) in €. */
+  /** Cumulative benefit (avoided external costs) in €. */
   cumulativeBenefit: number
 }
 
 export interface CostBenefit {
   timeline: TimelinePoint[]
-  /** Erstes Jahr, in dem der kumulierte Nutzen die Kosten erreicht; null = nicht im Zeitraum. */
+  /** First year in which the cumulative benefit reaches the costs; null = not within the period. */
   breakEvenYear: number | null
 }
 
 /**
- * Kumulierte Kosten vs. Nutzen über den Betrachtungszeitraum.
- * Investitionen verteilen sich gleichmäßig auf die Bauzeit. Betriebs-Mehrkosten
- * und Nutzen wachsen in der Bauzeit linear mit dem Ausbaufortschritt an.
+ * Cumulative costs vs. benefit over the period considered.
+ * Investments are spread evenly over the build period. Extra operating costs
+ * and benefits grow linearly with build progress during the build period.
  */
 export function costBenefit(
   totalInvestment: number,

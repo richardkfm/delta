@@ -22,13 +22,13 @@ export interface ScenarioResult {
   radius: MobilityRadius
   investment: Investment
   externalSavings: ExternalCostSaving[]
-  /** Summe der vermiedenen Folgekosten in €/Jahr. */
+  /** Total of avoided external costs in €/year. */
   externalSavingsPerYear: number
   costBenefit: CostBenefit
   co2KgPerPersonYear: number
 }
 
-/** Berechnet alle Ergebnisse eines Szenarios. Reine Funktion ohne Seiteneffekte. */
+/** Computes all results of a scenario. Pure function without side effects. */
 export function computeScenario(
   bench: CountryData,
   sliders: Sliders,

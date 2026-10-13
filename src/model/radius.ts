@@ -3,34 +3,34 @@ import type { CountryData } from '../config/countries'
 import type { Profile, ScenarioMetrics } from './types'
 
 export interface RadiusPoint {
-  /** Radius mit dem ÖPNV in km. */
+  /** Radius by public transit in km. */
   transitKm: number
-  /** Radius mit dem Rad in km. */
+  /** Radius by bike in km. */
   bikeKm: number
-  /** Größter Radius ohne Auto (bestes Verkehrsmittel) in km. */
+  /** Largest radius without a car (best mode of transport) in km. */
   bestKm: number
 }
 
 export interface MobilityRadius {
   today: RadiusPoint
   scenario: RadiusPoint
-  /** Zuwachs der erreichbaren Fläche (Kreisfläche) in Prozent. */
+  /** Increase in reachable area (circle area) in percent. */
   areaGainPct: number
 }
 
 function radiusAt(transitKmh: number, bikeKmh: number, profile: Profile, a: Assumptions): RadiusPoint {
   const loc = a.locationFactors[profile.location]
   const hours = a.radiusMinutes / 60
-  // Radius = Tür-zu-Tür-Geschwindigkeit × Zeit, angepasst an die Wohnlage.
+  // Radius = door-to-door speed × time, adjusted for the location.
   const transitKm = transitKmh * loc.transitSpeed * hours
   const bikeKm = bikeKmh * loc.bikeSpeed * hours
   return { transitKm, bikeKm, bestKm: Math.max(transitKm, bikeKm) }
 }
 
 /**
- * Wie weit komme ich in 30 Minuten ohne Auto? Heute vs. Szenario.
- * Basis sind die Tür-zu-Tür-Geschwindigkeiten von ÖPNV und Rad aus der Config.
- * Verschlechterungen gegenüber heute werden nicht angesetzt.
+ * How far can I get in 30 minutes without a car? Today vs. scenario.
+ * Based on the door-to-door speeds of transit and bike from the config.
+ * Deteriorations compared to today are not counted.
  */
 export function mobilityRadius(
   base: CountryData,

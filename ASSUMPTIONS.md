@@ -94,7 +94,8 @@ Comparability notes:
 - Households with 2+ cars: this concerns the second car. Probability × 1.4, capped
   at 95 %.
 - Households without a car: savings from fewer taxi, car-sharing and similar costs
-  (€600/year, up to −50 %) plus time gained × €8/h.
+  (€600/year, up to −50 %), i.e. at most €300/year. The time gained is shown as
+  hours only and is not converted into money, so the headline is real money.
 
 ### Mobility radius
 - Radius = sourced door-to-door speed × 30 min, separately for public transport

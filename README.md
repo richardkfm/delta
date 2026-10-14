@@ -65,6 +65,16 @@ the widget's link target with `VITE_DELTA_APP_URL` there (see `.env.example`).
 You can put `PORT` in `.env` too. Because the URL is fixed at build time,
 rebuild with `--build` after changing it.
 
+### Imprint (Impressum)
+
+A public site in Germany needs an imprint. Set it in `.env` (see
+`.env.example`): `VITE_IMPRINT_NAME`, `VITE_IMPRINT_STREET`, `VITE_IMPRINT_CITY`
+and `VITE_IMPRINT_EMAIL`, optionally `VITE_IMPRINT_PHONE` and
+`VITE_IMPRINT_VAT_ID`. Vite reads these at build time, so rebuild after
+changing them. The footer then links to `/#impressum`. If the name is empty, no
+imprint link is shown. `.env` is git-ignored, so your data stays out of the
+repository.
+
 Stack: Vite, React, TypeScript, Tailwind CSS, Recharts and Vitest. There is no
 backend.
 

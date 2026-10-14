@@ -45,7 +45,6 @@ const H: Assumptions = {
   maxProbability: 0.95,
   noCarSubstituteCostPerYear: 600,
   noCarSubstituteReductionMax: 0.5,
-  valueOfTimePerHour: 8,
 }
 const P_H = 0.62
 /** Full reference level under H. */
@@ -315,27 +314,25 @@ describe('moneySavings – one car', () => {
   it('total = probability × (full car cost − ticket) × 12', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 1)
-      const time = timeSavings(NL_FULL, pr, P_DE, A)
-      const m = moneySavings(NL_FULL, pr, time, A)
+      const m = moneySavings(NL_FULL, pr, A)
       const p = carAbolishProbability(NL_FULL, pr, A)
       expect(m.savingsIfCarAbolished).toBe(saving)
       expect(m.carAbolishProbability).toBeCloseTo(p, 10)
       expect(m.totalPerYear).toBeCloseTo(p * saving, 8)
       expect(m.betterServicePerYear).toBe(0)
-      expect(m.timeValuePerYear).toBe(0)
     }
   })
 
   it('big city at full reference level (hand calculation): 0.7 × 5880 = 4116 €', () => {
     const pr = profile('grossstadt', 17, 1)
-    const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
+    const m = moneySavings(H_FULL, pr, H)
     expect(m.savingsIfCarAbolished).toBe(5880)
     expect(m.totalPerYear).toBeCloseTo(4116, 8)
   })
 
   it('is 0 without improvements', () => {
     const pr = profile('grossstadt', 17, 1)
-    const m = moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A)
+    const m = moneySavings(ZERO, pr, A)
     expect(m.totalPerYear).toBe(0)
     expect(m.carAbolishProbability).toBe(0)
   })
@@ -345,7 +342,7 @@ describe('moneySavings – one car', () => {
     const cap = A.locationFactors.grossstadt.maxCarAbolishProbability / 2
     const a = { ...A, maxProbability: cap }
     const pr = profile('grossstadt', 17, 1)
-    const m = moneySavings(REF_FULL, pr, timeSavings(REF_FULL, pr, P_DE, a), a)
+    const m = moneySavings(REF_FULL, pr, a)
     expect(m.carAbolishProbability).toBeCloseTo(cap, 10)
     expect(m.totalPerYear).toBeCloseTo(cap * saving, 8)
   })
@@ -353,7 +350,7 @@ describe('moneySavings – one car', () => {
   it('uses the costs passed in', () => {
     const a = { ...A, carFullCostPerMonth: 400, transitTicketPerMonth: 100 }
     const pr = profile('grossstadt', 17, 1)
-    const m = moneySavings(NL_FULL, pr, timeSavings(NL_FULL, pr, P_DE, a), a)
+    const m = moneySavings(NL_FULL, pr, a)
     expect(m.savingsIfCarAbolished).toBe(3600)
   })
 })
@@ -365,9 +362,8 @@ describe('moneySavings – two or more cars', () => {
     for (const loc of LOCATIONS) {
       const pr1 = profile(loc, 17, 1)
       const pr2 = profile(loc, 17, 2)
-      const t = timeSavings(NL_FULL, pr1, P_DE, A)
-      const p1 = moneySavings(NL_FULL, pr1, t, A).carAbolishProbability
-      const m2 = moneySavings(NL_FULL, pr2, t, A)
+      const p1 = moneySavings(NL_FULL, pr1, A).carAbolishProbability
+      const m2 = moneySavings(NL_FULL, pr2, A)
       expect(m2.carAbolishProbability).toBeCloseTo(
         Math.min(A.maxProbability, p1 * A.secondCarProbabilityFactor),
         10,
@@ -378,51 +374,56 @@ describe('moneySavings – two or more cars', () => {
 
   it('small town (uncapped): 0.45 × 1.4 = 0.63', () => {
     const pr = profile('kleinstadt', 17, 2)
-    const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
+    const m = moneySavings(H_FULL, pr, H)
     expect(m.carAbolishProbability).toBeCloseTo(0.63, 10)
   })
 
   it('big city: 0.7 × 1.4 = 0.98 is capped at 0.95', () => {
     const pr = profile('grossstadt', 17, 2)
-    const m = moneySavings(H_FULL, pr, timeSavings(H_FULL, pr, P_H, H), H)
+    const m = moneySavings(H_FULL, pr, H)
     expect(m.carAbolishProbability).toBeCloseTo(0.95, 10)
     expect(m.totalPerYear).toBeCloseTo(0.95 * 5880, 8)
   })
 
   it('is 0 without improvements', () => {
     const pr = profile('grossstadt', 17, 2)
-    expect(moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A).totalPerYear).toBe(0)
+    expect(moneySavings(ZERO, pr, A).totalPerYear).toBe(0)
   })
 })
 
 describe('moneySavings – households without a car', () => {
   it('has no car effect', () => {
     const pr = profile('grossstadt', 17, 0)
-    const m = moneySavings(NL_FULL, pr, timeSavings(NL_FULL, pr, P_DE, A), A)
+    const m = moneySavings(NL_FULL, pr, A)
     expect(m.carAbolishProbability).toBe(0)
     expect(m.savingsIfCarAbolished).toBe(0)
   })
 
-  it('total = better service + time value', () => {
+  it('total = better service only, the time gain is not monetised', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 0)
-      const t = timeSavings(NL_FULL, pr, P_DE, A)
-      const m = moneySavings(NL_FULL, pr, t, A)
-      expect(m.totalPerYear).toBeCloseTo(m.betterServicePerYear + m.timeValuePerYear, 10)
-      expect(m.timeValuePerYear).toBeCloseTo(t.totalHoursPerWeek * A.workWeeksPerYear * A.valueOfTimePerHour, 8)
+      const m = moneySavings(NL_FULL, pr, A)
+      expect(m.totalPerYear).toBe(m.betterServicePerYear)
     }
+  })
+
+  it('does not depend on location or commute (service index only)', () => {
+    const city = moneySavings(NL_FULL, profile('grossstadt', 2, 0), A)
+    const rural = moneySavings(NL_FULL, profile('land', 40, 0), A)
+    expect(city.totalPerYear).toBe(rural.totalPerYear)
+    expect(city.totalPerYear).toBeCloseTo(A.noCarSubstituteCostPerYear * A.noCarSubstituteReductionMax, 10)
   })
 
   it('better service at full reference service: substitute costs × max. reduction × 1', () => {
     const pr = profile('kleinstadt', 17, 0)
-    const m = moneySavings(REF_FULL, pr, timeSavings(REF_FULL, pr, P_DE, A), A)
+    const m = moneySavings(REF_FULL, pr, A)
     expect(m.betterServicePerYear).toBeCloseTo(A.noCarSubstituteCostPerYear * A.noCarSubstituteReductionMax, 10)
   })
 
   it('service index ignores the car share', () => {
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, car: 0.3 }
-    const m = moneySavings(imp, pr, timeSavings(imp, pr, P_DE, A), A)
+    const m = moneySavings(imp, pr, A)
     expect(m.betterServicePerYear).toBe(0)
     expect(m.totalPerYear).toBe(0)
   })
@@ -430,27 +431,25 @@ describe('moneySavings – households without a car', () => {
   it('hand calculation headway only: index 0.35 / 0.75 → 600 × 0.5 × 0.4667 = 140 €', () => {
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, transit: 0.5 }
-    const t = timeSavings(imp, pr, P_H, H)
-    const m = moneySavings(imp, pr, t, H)
+    const m = moneySavings(imp, pr, H)
     expect(m.betterServicePerYear).toBeCloseTo(300 * (0.35 / 0.75), 10)
-    expect(m.timeValuePerYear).toBeCloseTo(0.9 * 46 * 8, 8)
+    expect(m.totalPerYear).toBeCloseTo(300 * (0.35 / 0.75), 10)
   })
 
   it('service index headway only = headway weight / sum of service weights (config assumptions)', () => {
     const w = A.carAbolishWeights
     const pr = profile('kleinstadt', 17, 0)
     const imp: Improvements = { ...ZERO, transit: A.carAbolishReferenceImprovement.transit }
-    const m = moneySavings(imp, pr, timeSavings(imp, pr, P_DE, A), A)
+    const m = moneySavings(imp, pr, A)
     const index = w.transit / (w.transit + w.rail + w.bike)
     expect(m.betterServicePerYear).toBeCloseTo(A.noCarSubstituteCostPerYear * A.noCarSubstituteReductionMax * index, 10)
   })
 
-  it('is 0 without improvements (service and time value)', () => {
+  it('is 0 without improvements', () => {
     for (const loc of LOCATIONS) {
       const pr = profile(loc, 17, 0)
-      const m = moneySavings(ZERO, pr, timeSavings(ZERO, pr, P_DE, A), A)
+      const m = moneySavings(ZERO, pr, A)
       expect(m.betterServicePerYear).toBe(0)
-      expect(m.timeValuePerYear).toBe(0)
       expect(m.totalPerYear).toBe(0)
     }
   })

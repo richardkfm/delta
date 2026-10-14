@@ -125,11 +125,11 @@ describe('Plausibility check – all sliders 1 (NL, 17 km)', () => {
     expect(r.co2KgPerPersonYear).toBeGreaterThan(0)
   })
 
-  it('households without a car benefit from service and time', () => {
+  it('households without a car save only on service, not on monetised time', () => {
     for (const { r } of results(0)) {
       expect(r.money.carAbolishProbability).toBe(0)
       expect(r.money.totalPerYear).toBeGreaterThan(0)
-      expect(r.money.totalPerYear).toBeCloseTo(r.money.betterServicePerYear + r.money.timeValuePerYear, 8)
+      expect(r.money.totalPerYear).toBe(r.money.betterServicePerYear)
     }
   })
 

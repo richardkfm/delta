@@ -84,8 +84,6 @@ export interface MoneySavings {
   savingsIfCarAbolished: number
   /** Without a car: savings from better service (taxi, car sharing …) in €/year. */
   betterServicePerYear: number
-  /** Without a car: monetised time gain in €/year. */
-  timeValuePerYear: number
 }
 
 /**
@@ -95,14 +93,10 @@ export interface MoneySavings {
  *   The ticket is only incurred if the car is actually given up.
  *   With 2+ cars it is about the second car: higher probability.
  * - Without a car: no car effect. Savings from better service (less taxi,
- *   car sharing, rental cars) plus time gain × conservative value of time.
+ *   car sharing, rental cars) only. The time gain is reported as hours
+ *   and deliberately not monetised, so the headline stays real money.
  */
-export function moneySavings(
-  imp: Improvements,
-  profile: Profile,
-  time: TimeSavings,
-  a: Assumptions,
-): MoneySavings {
+export function moneySavings(imp: Improvements, profile: Profile, a: Assumptions): MoneySavings {
   if (profile.cars === 0) {
     const w = a.carAbolishWeights
     const ref = a.carAbolishReferenceImprovement
@@ -116,13 +110,11 @@ export function moneySavings(
           offerWeight
         : 0
     const betterServicePerYear = a.noCarSubstituteCostPerYear * a.noCarSubstituteReductionMax * offerScore
-    const timeValuePerYear = time.totalHoursPerWeek * a.workWeeksPerYear * a.valueOfTimePerHour
     return {
-      totalPerYear: betterServicePerYear + timeValuePerYear,
+      totalPerYear: betterServicePerYear,
       carAbolishProbability: 0,
       savingsIfCarAbolished: 0,
       betterServicePerYear,
-      timeValuePerYear,
     }
   }
 
@@ -136,6 +128,5 @@ export function moneySavings(
     carAbolishProbability: p,
     savingsIfCarAbolished,
     betterServicePerYear: 0,
-    timeValuePerYear: 0,
   }
 }

@@ -5,6 +5,13 @@ services:
       args:
         # Set in .env (see .env.example); empty → widget links to index.html next to it.
         VITE_DELTA_APP_URL: ${VITE_DELTA_APP_URL:-}
+        # Imprint, also from .env. Empty name → no imprint link.
+        VITE_IMPRINT_NAME: ${VITE_IMPRINT_NAME:-}
+        VITE_IMPRINT_STREET: ${VITE_IMPRINT_STREET:-}
+        VITE_IMPRINT_CITY: ${VITE_IMPRINT_CITY:-}
+        VITE_IMPRINT_EMAIL: ${VITE_IMPRINT_EMAIL:-}
+        VITE_IMPRINT_PHONE: ${VITE_IMPRINT_PHONE:-}
+        VITE_IMPRINT_VAT_ID: ${VITE_IMPRINT_VAT_ID:-}
     image: delta:latest
     ports:
       - "${PORT:-7493}:80"

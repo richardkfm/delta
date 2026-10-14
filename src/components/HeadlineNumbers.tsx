@@ -33,7 +33,7 @@ export function HeadlineNumbers({ time, money, profile }: Props) {
         <p className="text-5xl font-bold tracking-tight text-accent tabular-nums sm:text-6xl">
           <LiveNumber value={money.totalPerYear} format={formatEuro} />
         </p>
-        <p className="text-sm text-muted">pro Jahr (Erwartungswert)</p>
+        <p className="text-sm text-muted">{profile.cars === 0 ? 'pro Jahr' : 'pro Jahr (Erwartungswert)'}</p>
         <MoneyDetails money={money} profile={profile} />
       </div>
     </section>
@@ -45,11 +45,7 @@ function MoneyDetails({ money, profile }: { money: MoneySavings; profile: Profil
     return (
       <ul className="mt-3 space-y-0.5 text-sm text-muted">
         <Row label="Weniger Taxi, Carsharing & Co." value={formatEuro(money.betterServicePerYear)} />
-        <Row
-          label={`Zeitgewinn (${formatNumber(ASSUMPTIONS.valueOfTimePerHour, 0)} €/Std.)`}
-          value={formatEuro(money.timeValuePerYear)}
-        />
-        <li className="pt-1">Ohne Auto gibt es keinen Autoeffekt.</li>
+        <li className="pt-1">Ohne Auto gibt es keinen Autoeffekt. Deine gesparte Zeit zählt links, nicht als Geld.</li>
       </ul>
     )
   }

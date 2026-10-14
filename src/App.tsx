@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ASSUMPTIONS } from './config/assumptions'
 import { BENCHMARKS, GERMANY, getBenchmark } from './config/countries'
 import { Footer } from './components/Footer'
+import { Imprint } from './components/Imprint'
 import { HeadlineNumbers } from './components/HeadlineNumbers'
 import { LiveNumber } from './components/LiveNumber'
 import { MobilityRadius } from './components/MobilityRadius'
@@ -9,6 +10,7 @@ import { ProfilePanel } from './components/ProfilePanel'
 import { SliderPanel } from './components/SliderPanel'
 import { StatePanel } from './components/StatePanel'
 import { useAnimatedNumber } from './hooks/useAnimatedNumber'
+import { IMPRINT, IMPRINT_HASH } from './config/imprint'
 import { formatEuro, formatNumber } from './lib/format'
 import { parseState, serializeState, type AppState } from './lib/urlState'
 import { computeScenario, SLIDER_KEYS, type Sliders } from './model'
@@ -16,6 +18,18 @@ import { computeScenario, SLIDER_KEYS, type Sliders } from './model'
 export default function App() {
   const [state, setState] = useState<AppState>(() => parseState(window.location.search))
   const [copied, setCopied] = useState(false)
+  const [showImprint, setShowImprint] = useState(() => isImprintHash(window.location.hash))
+
+  // The imprint lives under #impressum so it has a linkable address.
+  useEffect(() => {
+    const onHash = () => {
+      const show = isImprintHash(window.location.hash)
+      setShowImprint(show)
+      if (show) window.scrollTo(0, 0)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   const bench = getBenchmark(state.benchmarkId)
   const result = useMemo(
@@ -26,7 +40,7 @@ export default function App() {
   // Write the scenario to the URL so it can be shared via link.
   useEffect(() => {
     const query = serializeState(state)
-    window.history.replaceState(null, '', `${window.location.pathname}?${query}`)
+    window.history.replaceState(null, '', `${window.location.pathname}?${query}${window.location.hash}`)
   }, [state])
 
   const setSlider = (key: keyof Sliders, value: number) =>
@@ -51,6 +65,24 @@ export default function App() {
     } catch {
       // Aborted by the user or missing permission – nothing to do.
     }
+  }
+
+  if (showImprint && IMPRINT) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 sm:pt-10">
+        <p className="text-2xl font-bold tracking-tight">
+          <span className="text-accent">Δ</span> delta
+        </p>
+        <Imprint
+          imprint={IMPRINT}
+          onBack={() => {
+            window.history.pushState(null, '', `${window.location.pathname}${window.location.search}`)
+            setShowImprint(false)
+          }}
+        />
+        <Footer />
+      </div>
+    )
   }
 
   return (
@@ -139,6 +171,8 @@ export default function App() {
     </div>
   )
 }
+
+const isImprintHash = (hash: string) => hash === IMPRINT_HASH
 
 /** Compact bar at the bottom on phones so the headline numbers stay visible while adjusting. */
 function StickyBar({ hours, euros }: { hours: number; euros: number }) {

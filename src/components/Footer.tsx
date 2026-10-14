@@ -1,5 +1,6 @@
 import { ASSUMPTIONS, LOCATION_LABELS, type Location } from '../config/assumptions'
 import { BENCHMARKS, GERMANY, type CountryData } from '../config/countries'
+import { IMPRINT, IMPRINT_HASH } from '../config/imprint'
 import { SOURCES } from '../config/sources'
 import { formatBillions, formatEuro, formatNumber, formatPercent } from '../lib/format'
 
@@ -242,6 +243,15 @@ export function Footer() {
         <p>
           <span className="font-semibold text-ink">delta</span> v{__APP_VERSION__} · Ein Erklär-Tool, kein
           wissenschaftliches Modell.
+          {IMPRINT && (
+            <>
+              {' '}
+              ·{' '}
+              <a href={IMPRINT_HASH} className="text-ink underline decoration-line underline-offset-2 hover:text-accent">
+                Impressum
+              </a>
+            </>
+          )}
         </p>
         <a
           href={REPO_URL}

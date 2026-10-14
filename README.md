@@ -68,6 +68,9 @@ chosen with the `v` parameter:
   <img src="docs/screenshots/widget-bahn.png" alt="Widget bahn: ten train icons, most of them on time, and the buffer time saved per week" width="31%">
 </p>
 
+[`docs/mockups/`](docs/mockups/) has mockups of each variant embedded in a news article
+(fictional news sites).
+
 Embed it with a plain iframe:
 
 ```html

@@ -156,8 +156,9 @@ Comparability notes:
 
 ## UI
 - The app UI is in German; the docs and code comments are in English.
-- Default state without URL parameters: all sliders at 100 % (full Dutch level),
-  big city, 17 km, 1 car.
+- Default state without URL parameters: public transport 80 %, rail 50 %,
+  cycling 60 %, car dependency 20 % (a mixed starting point that leaves room
+  to explore), big city, 17 km, 1 car.
 - URL parameters: `b`, `oepnv`, `bahn`, `rad`, `auto` (0–100), `lage`, `km`,
   `autos`. Invalid values fall back to the defaults.
 - On mobile, a bar at the bottom keeps the headline numbers visible.

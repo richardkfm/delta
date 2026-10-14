@@ -11,8 +11,8 @@ describe('parseWidgetState', () => {
     expect(parseWidgetState('')).toEqual(DEFAULT_WIDGET_STATE)
   })
 
-  it('reads location and level', () => {
-    expect(parseWidgetState('?lage=land&niveau=40')).toEqual({ location: 'land', level: 0.4 })
+  it('reads variant, location and level', () => {
+    expect(parseWidgetState('?v=bahn&lage=land&niveau=40')).toEqual({ variant: 'bahn', location: 'land', level: 0.4 })
   })
 
   it('clamps and rounds the level', () => {
@@ -22,6 +22,7 @@ describe('parseWidgetState', () => {
   })
 
   it('falls back to defaults for invalid values', () => {
+    expect(parseWidgetState('v=quiz').variant).toBe(DEFAULT_WIDGET_STATE.variant)
     expect(parseWidgetState('lage=mond').location).toBe(DEFAULT_WIDGET_STATE.location)
     expect(parseWidgetState('niveau=abc').level).toBe(DEFAULT_WIDGET_STATE.level)
     expect(parseWidgetState('niveau=').level).toBe(DEFAULT_WIDGET_STATE.level)
@@ -29,7 +30,7 @@ describe('parseWidgetState', () => {
 })
 
 describe('buildAppLink', () => {
-  const w = { level: 0.7, location: 'kleinstadt' } as const
+  const w = { variant: 'auto', level: 0.7, location: 'kleinstadt' } as const
 
   it('resolves an empty or relative app URL against the widget page', () => {
     expect(buildAppLink('', w, PAGE)).toMatch(/^https:\/\/delta\.example\.org\/\?/)
@@ -50,17 +51,25 @@ describe('buildAppLink', () => {
     expect(link.searchParams.get('autos')).toBe('1')
   })
 
-  it('adds UTM parameters', () => {
+  it('moves only the rail slider in the "bahn" variant', () => {
+    const link = new URL(buildAppLink('https://delta.example.org/', { ...w, variant: 'bahn' }, PAGE))
+    expect(link.searchParams.get('bahn')).toBe('70')
+    for (const key of ['oepnv', 'rad', 'auto']) expect(link.searchParams.get(key)).toBe('0')
+  })
+
+  it('adds UTM parameters with the variant as utm_content', () => {
     const link = new URL(buildAppLink('https://delta.example.org/', w, PAGE))
     expect(link.searchParams.get('utm_source')).toBe('widget')
     expect(link.searchParams.get('utm_medium')).toBe('embed')
     expect(link.searchParams.get('utm_content')).toBe('auto')
+    const vergleich = new URL(buildAppLink('https://delta.example.org/', { ...w, variant: 'vergleich' }, PAGE))
+    expect(vergleich.searchParams.get('utm_content')).toBe('vergleich')
   })
 })
 
 describe('toAppState', () => {
   it('gives the app the same savings the widget shows', () => {
-    const w = { level: 1, location: 'grossstadt' } as const
+    const w = { variant: 'auto', level: 1, location: 'grossstadt' } as const
     const app = toAppState(w)
     const result = computeScenario(getBenchmark(app.benchmarkId), app.sliders, app.profile)
     expect(result.money.carAbolishProbability).toBeCloseTo(0.7)

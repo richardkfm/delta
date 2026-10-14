@@ -28,6 +28,10 @@ The app is in German, as it is aimed at a German audience.
 - **Sharing and transparency:** every scenario can be shared via URL parameters.
   The footer lists every value used, with footnotes to the source list or an
   "Annahme" (assumption) label.
+- **Embeddable widget:** three small versions of delta that other websites can
+  embed with an iframe: car ownership, Germany vs. the Netherlands, and rail
+  punctuality. Each links to the full app with the same scenario. See
+  [Embedding the widget](#embedding-the-widget).
 
 ## Getting started
 
@@ -44,6 +48,50 @@ The build is fully static (relative paths) and can be deployed to any web host.
 Stack: Vite, React, TypeScript, Tailwind CSS, Recharts and Vitest. There is no
 backend.
 
+## Embedding the widget
+
+`widget.html` is a small standalone page for other websites. Visitors pick where
+they live and move one slider from "Germany today" to the Netherlands' level.
+The button "Ganzes Szenario ansehen" (see the full scenario) opens the full app
+in a new tab, with the same scenario prefilled. There are three variants,
+chosen with the `v` parameter:
+
+| `v=` | Question | What it shows | Height |
+| --- | --- | --- | --- |
+| `auto` (default) | "Könntest du dein Auto abschaffen?" (Could you give up your car?) | A gauge with the chance of giving up the car, plus the expected savings per year. The slider moves all four model sliders together. | 540 px |
+| `vergleich` | "Wie weit liegt Deutschland zurück?" (How far behind is Germany?) | A dumbbell chart of the share of trips by car, punctual long-distance trains and the share of trips by bike: today, the Netherlands and your scenario on one 0–100 % axis. Plus the time saved per week. | 620 px |
+| `bahn` | "Wie pünktlich wäre dein Zug?" (How punctual would your train be?) | How many of 10 long-distance trains are on time, plus the buffer time saved per week. The slider moves only the rail slider. | 550 px |
+
+<p>
+  <img src="docs/screenshots/widget-auto.png" alt="Widget auto: location toggle, slider at 80 % Dutch level, gauge with a 36 % chance of giving up the car and 2,104 € expected savings per year" width="31%">
+  <img src="docs/screenshots/widget-vergleich.png" alt="Widget vergleich: dumbbell chart comparing Germany today, the Netherlands and the scenario for car share, punctual trains and bike share" width="31%">
+  <img src="docs/screenshots/widget-bahn.png" alt="Widget bahn: ten train icons, most of them on time, and the buffer time saved per week" width="31%">
+</p>
+
+Embed it with a plain iframe:
+
+```html
+<iframe src="https://<your-host>/widget.html?v=auto"
+        width="100%" height="540" style="border:0;max-width:420px"
+        title="delta – Könntest du dein Auto abschaffen?" loading="lazy"></iframe>
+```
+
+- Optional parameters: `lage=grossstadt|kleinstadt|land` (where the visitor
+  lives) and `niveau=0–100` (the starting slider position, default 100).
+- Heights in the table fit phone widths (320 px). At 420 px width, the `auto`
+  and `vergleich` variants need about 40 px less.
+- The link target is set at build time with `VITE_DELTA_APP_URL` (see
+  `.env.example`). If it is empty, the widget links to `index.html` in the same
+  folder. The link carries the scenario as URL parameters plus
+  `utm_source=widget&utm_medium=embed&utm_content=<variant>`. In the `bahn`
+  variant, the other three sliders are set to 0, so the full app shows the same
+  numbers.
+- The widget sets no cookies and does no tracking.
+- The host serving `widget.html` must allow framing: no `X-Frame-Options`
+  header, and no `Content-Security-Policy: frame-ancestors` that excludes the
+  embedding sites. If an embedding site sandboxes the iframe, it needs
+  `allow-scripts allow-popups` for the widget and the link to work.
+
 ## Project structure
 
 | Path | Contents |
@@ -55,6 +103,7 @@ backend.
 | `src/model/` | Pure calculation functions without UI, fully tested |
 | `src/lib/` | Formatting (de-DE) and URL state for sharing |
 | `src/components/` | UI components |
+| `src/widget/` | Embeddable widget (`widget.html`): variants, state, link to the app, charts |
 
 ## Adding a benchmark country
 

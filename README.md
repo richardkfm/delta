@@ -45,6 +45,21 @@ npm run preview  # serve the build locally
 
 The build is fully static (relative paths) and can be deployed to any web host.
 
+### Docker Compose
+
+If you don't want to install Node, you can run delta with Docker instead:
+
+```bash
+docker compose up -d --build   # build the image and start it
+# → http://localhost:7493
+docker compose down            # stop it
+```
+
+The image is built in two stages. Node runs the tests and creates the static
+build; a failing test aborts the build. nginx then serves the result. To use a
+different host port, set `PORT`, for example `PORT=8080 docker compose up -d`.
+After pulling new changes, run `docker compose up -d --build` again.
+
 Stack: Vite, React, TypeScript, Tailwind CSS, Recharts and Vitest. There is no
 backend.
 

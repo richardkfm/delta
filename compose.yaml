@@ -1,0 +1,7 @@
+services:
+  delta:
+    build: .
+    image: delta:latest
+    ports:
+      - "${PORT:-7493}:80"
+    restart: unless-stopped

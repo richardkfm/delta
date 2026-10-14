@@ -39,7 +39,7 @@ export function computeScenario(
   const metrics = scenarioMetrics(base, bench, sliders)
   const imp = improvements(base, metrics)
   const time = timeSavings(imp, profile, base.railPunctuality, a)
-  const money = moneySavings(imp, profile, time, a)
+  const money = moneySavings(imp, profile, a)
   const radius = mobilityRadius(base, metrics, profile, a)
   const inv = investment(base, metrics, imp, a)
   const externalSavings = externalCostSavings(imp, a)

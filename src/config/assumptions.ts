@@ -65,8 +65,6 @@ export const ASSUMPTIONS = {
   noCarSubstituteCostPerYear: 600,
   /** [Assumption] Max. reduction of this spending at full benchmark service level (0–1). */
   noCarSubstituteReductionMax: 0.5,
-  /** [Assumption] Conservative value of time in €/hour, applied only to households without a car. */
-  valueOfTimePerHour: 8,
 
   // ---------------- Time ----------------
   /**

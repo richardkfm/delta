@@ -79,7 +79,7 @@ export function Segmented<T extends string | number>({ name, options, value, onC
         return (
           <label
             key={String(o.value)}
-            className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-center text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent sm:flex-none ${
+            className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-center text-sm transition active:scale-95 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent sm:flex-none ${
               checked ? 'bg-accent text-white' : 'text-ink hover:text-accent'
             }`}
           >

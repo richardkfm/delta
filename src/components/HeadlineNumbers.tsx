@@ -1,7 +1,7 @@
 import { ASSUMPTIONS } from '../config/assumptions'
-import { useAnimatedNumber } from '../hooks/useAnimatedNumber'
 import { formatEuro, formatNumber, formatPercent } from '../lib/format'
 import type { MoneySavings, Profile, TimeSavings } from '../model'
+import { LiveNumber } from './LiveNumber'
 
 interface Props {
   time: TimeSavings
@@ -11,16 +11,14 @@ interface Props {
 
 /** The two headline numbers: time per week and money per year, animated. */
 export function HeadlineNumbers({ time, money, profile }: Props) {
-  const hours = useAnimatedNumber(time.totalHoursPerWeek)
-  const euros = useAnimatedNumber(money.totalPerYear)
-
   return (
     <section aria-label="Deine Ersparnis" className="grid gap-6 sm:grid-cols-2" aria-live="polite">
       <div>
         <p className="text-sm text-muted">Du sparst</p>
         <p className="text-5xl font-bold tracking-tight text-accent tabular-nums sm:text-6xl">
-          {formatNumber(hours, 1)}
-          <span className="ml-2 text-2xl font-semibold sm:text-3xl">Std.</span>
+          <LiveNumber value={time.totalHoursPerWeek} format={(h) => formatNumber(h, 1)}>
+            <span className="ml-2 text-2xl font-semibold sm:text-3xl">Std.</span>
+          </LiveNumber>
         </p>
         <p className="text-sm text-muted">pro Woche</p>
         <ul className="mt-3 space-y-0.5 text-sm text-muted">
@@ -33,7 +31,7 @@ export function HeadlineNumbers({ time, money, profile }: Props) {
       <div>
         <p className="text-sm text-muted">Du sparst</p>
         <p className="text-5xl font-bold tracking-tight text-accent tabular-nums sm:text-6xl">
-          {formatEuro(euros)}
+          <LiveNumber value={money.totalPerYear} format={formatEuro} />
         </p>
         <p className="text-sm text-muted">pro Jahr (Erwartungswert)</p>
         <MoneyDetails money={money} profile={profile} />

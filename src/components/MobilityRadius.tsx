@@ -1,4 +1,5 @@
 import type { MobilityRadius as Radius } from '../model'
+import { useSettledChange } from '../hooks/useSettledChange'
 import { formatKm, formatNumber } from '../lib/format'
 
 const SIZE = 240
@@ -19,6 +20,8 @@ export function MobilityRadius({ radius, minutes }: { radius: Radius; minutes: n
   const scale = maxKm > 0 ? R_MAX / maxKm : 0
   const rToday = today.bestKm * scale
   const rScenario = scenario.bestKm * scale
+  // Replays the ripple once the scenario radius has settled on a new value.
+  const ripple = useSettledChange(scenario.bestKm)
 
   const transitBest = scenario.transitKm >= scenario.bikeKm
   const bestLabel = transitBest ? 'ÖPNV' : 'Rad'
@@ -43,46 +46,60 @@ export function MobilityRadius({ radius, minutes }: { radius: Radius; minutes: n
         aria-label={ariaLabel}
         className="mx-auto mt-3 block h-auto w-full max-w-[260px]"
       >
-        <circle
-          cx={C}
-          cy={C}
-          r={rScenario}
-          fill="var(--color-accent)"
-          fillOpacity={0.12}
-          stroke="var(--color-accent)"
-          strokeWidth={2}
-          style={{ transition: 'r 300ms ease' }}
-        />
-        <circle
-          cx={C}
-          cy={C}
-          r={rToday}
-          fill="var(--color-muted)"
-          fillOpacity={0.04}
-          stroke="var(--color-muted)"
-          strokeWidth={1.5}
-          strokeDasharray="4 3"
-          style={{ transition: 'r 300ms ease' }}
-        />
+        {ripple > 0 && rScenario > 0 && (
+          <circle
+            key={ripple}
+            className="radius-ripple"
+            cx={C}
+            cy={C}
+            r={rScenario}
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth={3}
+          />
+        )}
+        <g className="radius-grow">
+          <circle
+            cx={C}
+            cy={C}
+            r={rScenario}
+            fill="var(--color-accent)"
+            fillOpacity={0.12}
+            stroke="var(--color-accent)"
+            strokeWidth={2}
+            style={{ transition: 'r 300ms ease' }}
+          />
+          <circle
+            cx={C}
+            cy={C}
+            r={rToday}
+            fill="var(--color-muted)"
+            fillOpacity={0.04}
+            stroke="var(--color-muted)"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            style={{ transition: 'r 300ms ease' }}
+          />
 
-        <line
-          x1={C}
-          y1={C}
-          x2={C - rToday}
-          y2={C}
-          stroke="var(--color-muted)"
-          strokeWidth={1}
-          style={{ transition: 'x2 300ms ease' }}
-        />
-        <line
-          x1={C}
-          y1={C}
-          x2={C + rScenario}
-          y2={C}
-          stroke="var(--color-accent)"
-          strokeWidth={1}
-          style={{ transition: 'x2 300ms ease' }}
-        />
+          <line
+            x1={C}
+            y1={C}
+            x2={C - rToday}
+            y2={C}
+            stroke="var(--color-muted)"
+            strokeWidth={1}
+            style={{ transition: 'x2 300ms ease' }}
+          />
+          <line
+            x1={C}
+            y1={C}
+            x2={C + rScenario}
+            y2={C}
+            stroke="var(--color-accent)"
+            strokeWidth={1}
+            style={{ transition: 'x2 300ms ease' }}
+          />
+        </g>
 
         <text x={todayX} y={C - 6} textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--color-muted)" style={halo}>
           {formatKm(today.bestKm)}

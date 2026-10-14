@@ -3,6 +3,7 @@ import { ASSUMPTIONS } from './config/assumptions'
 import { BENCHMARKS, GERMANY, getBenchmark } from './config/countries'
 import { Footer } from './components/Footer'
 import { HeadlineNumbers } from './components/HeadlineNumbers'
+import { LiveNumber } from './components/LiveNumber'
 import { MobilityRadius } from './components/MobilityRadius'
 import { ProfilePanel } from './components/ProfilePanel'
 import { SliderPanel } from './components/SliderPanel'
@@ -62,7 +63,7 @@ export default function App() {
           <button
             type="button"
             onClick={share}
-            className="rounded-full border border-line px-3 py-1.5 text-sm hover:border-accent hover:text-accent"
+            className="rounded-full border border-line px-3 py-1.5 text-sm transition hover:border-accent hover:text-accent active:scale-95"
           >
             {copied ? 'Link kopiert ✓' : 'Szenario teilen'}
           </button>
@@ -120,9 +121,15 @@ export default function App() {
         <StatePanel result={result} />
       </div>
 
-      <section aria-label="Nebeneffekt CO₂" className="mt-10 rounded-xl bg-accent-soft p-4 text-sm">
+      <section
+        aria-label="Nebeneffekt CO₂"
+        className="mt-10 rounded-xl bg-accent-soft p-4 text-sm transition duration-200 hover:shadow-[0_6px_20px_-8px_rgb(11_110_79_/_0.35)] motion-safe:hover:-translate-y-0.5"
+      >
         <span className="font-semibold text-accent">Nebeneffekt:</span> Im Schnitt{' '}
-        <span className="font-semibold tabular-nums">{formatNumber(result.co2KgPerPersonYear, 0)} kg CO₂e</span> weniger
+        <span className="font-semibold tabular-nums">
+          <LiveNumber value={result.co2KgPerPersonYear} format={(kg) => `${formatNumber(kg, 0)} kg CO₂e`} />
+        </span>{' '}
+        weniger
         pro Person und Jahr – durch weniger Autofahrten.
       </section>
 

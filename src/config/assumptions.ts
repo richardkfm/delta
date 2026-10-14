@@ -53,7 +53,7 @@ export const ASSUMPTIONS = {
    * [Source: adac-autokosten, adac-kompaktklasse]
    */
   carFullCostPerMonth: 550,
-  /** Deutschlandticket 2026: 63 €/month. [Source: correctiv-dticket] */
+  /** Deutschlandticket 2026: 63 €/month (68 €/month from 2027 on). [Source: correctiv-dticket] */
   transitTicketPerMonth: 63,
   /** [Assumption] Factor on the give-up probability for a second car (households with 2+ cars). */
   secondCarProbabilityFactor: 1.4,

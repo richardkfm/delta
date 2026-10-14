@@ -60,6 +60,11 @@ build; a failing test aborts the build. nginx then serves the result. To use a
 different host port, set `PORT`, for example `PORT=8080 docker compose up -d`.
 After pulling new changes, run `docker compose up -d --build` again.
 
+The app is at `/` and the widget at `/widget.html`. Compose reads `.env`, so set
+the widget's link target with `VITE_DELTA_APP_URL` there (see `.env.example`).
+You can put `PORT` in `.env` too. Because the URL is fixed at build time,
+rebuild with `--build` after changing it.
+
 Stack: Vite, React, TypeScript, Tailwind CSS, Recharts and Vitest. There is no
 backend.
 

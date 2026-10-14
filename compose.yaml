@@ -1,6 +1,10 @@
 services:
   delta:
-    build: .
+    build:
+      context: .
+      args:
+        # Set in .env (see .env.example); empty → widget links to index.html next to it.
+        VITE_DELTA_APP_URL: ${VITE_DELTA_APP_URL:-}
     image: delta:latest
     ports:
       - "${PORT:-7493}:80"

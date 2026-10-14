@@ -5,6 +5,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Link target of the embeddable widget, read by Vite at build time.
+ARG VITE_DELTA_APP_URL=
+
 COPY . .
 RUN npm test && npm run build
 

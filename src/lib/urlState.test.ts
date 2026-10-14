@@ -12,6 +12,10 @@ describe('parseState', () => {
     expect(parseState('')).toEqual(DEFAULT_STATE)
   })
 
+  it('starts with a mixed slider position instead of the full benchmark level', () => {
+    expect(DEFAULT_STATE.sliders).toEqual({ transit: 0.8, rail: 0.5, bike: 0.6, car: 0.2 })
+  })
+
   it('accepts a leading "?" in the search string', () => {
     expect(parseState('?b=nl&oepnv=50')).toEqual(parseState('b=nl&oepnv=50'))
     expect(parseState('?b=nl&oepnv=50').benchmarkId).toBe('nl')

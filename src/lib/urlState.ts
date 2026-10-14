@@ -17,7 +17,9 @@ export interface AppState {
 
 export const DEFAULT_STATE: AppState = {
   benchmarkId: DEFAULT_BENCHMARK_ID,
-  sliders: { transit: 1, rail: 1, bike: 1, car: 1 },
+  // Mixed starting point: not everything maxed out, so there is something left
+  // to discover when moving the sliders.
+  sliders: { transit: 0.8, rail: 0.5, bike: 0.6, car: 0.2 },
   profile: { location: 'grossstadt', commuteKm: 17, cars: 1 },
 }
 

@@ -81,7 +81,7 @@ function PresetButton({ active, onClick, children }: { active: boolean; onClick:
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1.5 leading-tight transition-colors ${
+      className={`rounded-full border px-3 py-1.5 leading-tight transition active:scale-95 ${
         active ? 'border-accent bg-accent text-white' : 'border-line hover:border-accent hover:text-accent'
       }`}
     >

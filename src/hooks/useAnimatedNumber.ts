@@ -22,7 +22,8 @@ export function useAnimatedNumber(target: number, durationMs = 500): number {
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs)
       const eased = 1 - (1 - t) ** 3
-      const v = from + (target - from) * eased
+      // Land exactly on the target so callers can compare against it.
+      const v = t === 1 ? target : from + (target - from) * eased
       valueRef.current = v
       setValue(v)
       if (t < 1) frame = requestAnimationFrame(tick)
